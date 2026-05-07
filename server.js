@@ -11,7 +11,7 @@ const io = new Server(server);
 // Load your JSON config
 let config = JSON.parse(fs.readFileSync('./config.json'));
 
-let tiktokUsername = "YOUR_TIKTOK_USERNAME"; // Change this
+let tiktokUsername = "big_shaxxy"; // Change this
 let tiktokConn = new WebcastPushConnection(tiktokUsername);
 
 tiktokConn.connect().then(state => {
