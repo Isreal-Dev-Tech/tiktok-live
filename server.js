@@ -14,6 +14,13 @@ let config = JSON.parse(fs.readFileSync('./config.json'));
 let tiktokUsername = "big_shaxxy"; // Change this
 let tiktokConn = new WebcastPushConnection(tiktokUsername);
 
+const path = require('path');
+
+// This tells the server to send your index.html file to the browser
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'index.html'));
+});
+
 tiktokConn.connect().then(state => {
     console.log(`Connected to ${state.roomId}`);
 }).catch(err => console.error("Connection Failed", err));
