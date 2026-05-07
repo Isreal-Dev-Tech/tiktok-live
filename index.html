@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        .race-container { width: 100%; position: relative; height: 800px; background: #111; }
+        .lane { height: 50px; border-bottom: 1px solid #333; position: relative; color: white; display: flex; align-items: center; }
+        .runner { position: absolute; left: 0; transition: left 0.4s ease; font-size: 30px; }
+        .leaderboard { position: fixed; top: 10px; right: 10px; background: rgba(0,0,0,0.8); color: gold; padding: 10px; border: 1px solid gold; width: 200px; }
+    </style>
+</head>
+<body>
+    <div id="leaderboard" class="leaderboard"><h3>🏆 Rankings</h3><div id="list"></div></div>
+    <div id="raceTrack" class="race-container"></div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io();
+        const track = document.getElementById('raceTrack');
+        const list = document.getElementById('list');
+
+        socket.on('updateRace', (countries) => {
+            track.innerHTML = '';
+            list.innerHTML = '';
+            
+            countries.forEach((c, index) => {
+                // Update the Race Track
+                let lane = document.createElement('div');
+                lane.className = 'lane';
+                lane.innerHTML = `<div class="runner" style="left: ${c.score}%">${c.flag} 🏃</div>`;
+                track.appendChild(lane);
+
+                // Update the Leaderboard (Top 15)
+                if (index < 15) {
+                    let item = document.createElement('div');
+                    item.innerHTML = `${index + 1}. ${c.flag} ${c.name}: ${c.score}`;
+                    list.appendChild(item);
+                }
+            });
+        });
+    </script>
+</body>
+</html>

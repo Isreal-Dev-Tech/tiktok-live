@@ -1,0 +1,18 @@
+{
+  "name": "tiktok-country-race",
+  "version": "1.0.0",
+  "description": "Interactive TikTok Live Running Man Race",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "socket.io": "^4.7.2",
+    "tiktok-live-connector": "^1.2.1",
+    "fs": "0.0.1-security"
+  },
+  "author": "",
+  "license": "ISC"
+}
