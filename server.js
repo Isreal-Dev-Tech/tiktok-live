@@ -27,7 +27,7 @@ config.countries = config.countries.map(c => ({
 }));
 
 // TikTok Connection
-let tiktokUsername = "justplayingofficial"; 
+let tiktokUsername = "malikgamin91"; 
 let tiktokConn = new WebcastPushConnection(tiktokUsername);
 
 tiktokConn.connect().then(state => {
