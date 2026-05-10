@@ -11,7 +11,7 @@ const io = new Server(server);
 
 // --- CONFIGURATION ---
 const TIKTOOL_API_KEY = "tk_91ec88c2870958d10d58fbcfe4e73840d018705e201a96c1"; 
-const TARGET_USERNAME = "ellgaming69"; // Updated to match your previous logs
+const TARGET_USERNAME = "bunko353"; // Updated to match your previous logs
 
 app.use('/assets', express.static(path.join(__dirname, 'assets')));
 app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'index.html')));
@@ -30,10 +30,10 @@ const tiktok = new TikTokLive({
     uniqueId: TARGET_USERNAME,
     apiKey: TIKTOOL_API_KEY,
     autoReconnect: true,
-    // Using the msToken you found to bypass the cookie error
-    msToken: "6ETzAhBBOArIqqMdRdrBzGhlLFbxQQZ7-s1-1fnC0oznfjwTtC9u37En376xGSmhFzrtAmPKL6cBq-LTluMcTmfm8IMTPLR3z9JqKNDA02GFHs3D4Ti1hXJxypCIJz4W1XUsqm1UgbFZjUdcSU9Pjmmd",
+    // We leave sessionId out and force the use of th>
+    signServerUrl: "https://api.tik.tools",
     clientParams: {
-        "user_agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Mobile Safari/537.36"
+        "user_agent": "Mozilla/5.0 (Windows NT 10.0; >
     }
 });
 
