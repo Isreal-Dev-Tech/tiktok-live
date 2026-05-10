@@ -24,7 +24,7 @@ config.countries = config.countries.map(c => ({
     currentPos: (c.score || 0) % 100
 }));
 
-let tiktokUsername = "diamondgaming001"; 
+let tiktokUsername = "justplayingofficial"; 
 let tiktokConn = new WebcastPushConnection(tiktokUsername);
 
 tiktokConn.connect().then(state => {
