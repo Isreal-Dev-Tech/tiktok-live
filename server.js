@@ -18,7 +18,7 @@ app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'index.html')));
 
 // Load and Clean Initial Data
 let rawConfig = JSON.parse(fs.readFileSync('./config.json'));
-let countries = rawConfig.countries.map(c => ({
+let countriesList = rawConfig.countries.map(c => ({
     id: c.id,
     name: c.name,
     flag: c.flag,
@@ -46,8 +46,7 @@ tiktok.on('error', (err) => console.error("❌ Connection Error:", err.message))
 tiktok.on('gift', (data) => {
     console.log(`🎁 Gift: ${data.giftName} x${data.repeatCount}`);
 
-    // Match gift name (Case-Insensitive)
-    let country = countries.find(c => 
+    let country = countriesList.find(c => 
         c.gift.toLowerCase() === data.giftName.toLowerCase()
     );
     
@@ -57,19 +56,29 @@ tiktok.on('gift', (data) => {
         country.currentPos = country.score % 100;
         
         // Sort for the leaderboard
-        countries.sort((a, b) => b.score - a.score);
+        countriesList.sort((a, b) => b.score - a.score);
 
-        // SENDING DIRECT ARRAY TO FIX "UNDEFINED"
-        io.emit('updateRace', countries);
+        // Sending a clean object that matches the HTML script
+        io.emit('updateRace', {
+            allCountries: countriesList,
+            winner: countriesList,
+            lastGiftedId: country.id,
+            lastGiftIcon: country.giftIcon
+        });
     }
 });
 
 tiktok.connect();
 
 io.on('connection', (socket) => {
-    // Send full array on initial connect
-    socket.emit('updateRace', countries);
+    socket.emit('updateRace', {
+        allCountries: countriesList,
+        winner: countriesList
+    });
 });
 
 const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => console.log(`🚀 Race Server: http://localhost:${PORT}`));
+server.listen(PORT, () => {
+    console.log(`🚀 Race Server: http://localhost:${PORT}`);
+    console.log(`Watching: ${TARGET_USERNAME}`);
+});
