@@ -16,20 +16,18 @@ const TARGET_USERNAME = "bunko353";
 app.use('/assets', express.static(path.join(__dirname, 'assets')));
 app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'index.html')));
 
-// Load and Clean Initial Data
+// Store combo history to prevent "cheating" / double counting
+let giftComboTracker = {};
+
+// Load Data
 let rawConfig = JSON.parse(fs.readFileSync('./config.json'));
 let countriesList = rawConfig.countries.map(c => ({
-    id: c.id,
-    name: c.name,
-    flag: c.flag,
-    gift: c.gift,
-    giftIcon: c.giftIcon,
+    ...c,
     score: c.score || 0,
     laps: Math.floor((c.score || 0) / 100),
     currentPos: (c.score || 0) % 100
 }));
 
-// --- TIKTOK CONNECTION ---
 const tiktok = new TikTokLive({
     uniqueId: TARGET_USERNAME,
     apiKey: TIKTOOL_API_KEY,
@@ -40,34 +38,52 @@ const tiktok = new TikTokLive({
     }
 });
 
-tiktok.on('connected', () => console.log(`✅ SUCCESS: Connected to ${TARGET_USERNAME}`));
-tiktok.on('error', (err) => console.error("❌ Connection Error:", err.message));
-
 tiktok.on('gift', (data) => {
-    console.log(`🎁 Gift: ${data.giftName} x${data.repeatCount}`);
+    // 1. COMBO LOGIC: Prevent 1+2+3... calculation error
+    // We identify a unique gift session by User + Gift Name
+    const trackingId = `${data.userId}_${data.giftName}`;
+    let newGiftsCount = 0;
+
+    if (data.repeatEnd) {
+        // If the combo is finished, we see how many were sent in total minus what we already counted
+        newGiftsCount = data.repeatCount - (giftComboTracker[trackingId] || 0);
+        delete giftComboTracker[trackingId]; // Clear memory
+    } else {
+        // During the combo, we only add the difference
+        newGiftsCount = data.repeatCount - (giftComboTracker[trackingId] || 0);
+        giftComboTracker[trackingId] = data.repeatCount;
+    }
+
+    if (newGiftsCount <= 0) return; // Skip if no new gifts in this update
 
     let country = countriesList.find(c => 
         c.gift.toLowerCase() === data.giftName.toLowerCase()
     );
     
     if (country) {
-        country.score += data.repeatCount;
-        country.laps = Math.floor(country.score / 100);
-        country.currentPos = country.score % 100;
+        console.log(`🎁 ${data.nickname} sent ${newGiftsCount} ${data.giftName} for ${country.name}`);
+
+        country.score += newGiftsCount;
         
-        // Sort for the leaderboard
+        // 2. FINISH LINE LOGIC: Reset at 100 points
+        country.laps = Math.floor(country.score / 100);
+        
+        // currentPos logic: 0 to 90 (90 is the finish line before it resets)
+        country.currentPos = (country.score % 100) * 0.9; 
+        
+        // Sort: Leader always at index 0
         countriesList.sort((a, b) => b.score - a.score);
 
-        // Sending a clean object that matches the HTML script
         io.emit('updateRace', {
             allCountries: countriesList,
-            winner: countriesList,
+            winner: countriesList, // Explicitly send the leader
             lastGiftedId: country.id,
             lastGiftIcon: country.giftIcon
         });
     }
 });
 
+tiktok.on('connected', () => console.log(`✅ Live: ${TARGET_USERNAME}`));
 tiktok.connect();
 
 io.on('connection', (socket) => {
@@ -77,8 +93,4 @@ io.on('connection', (socket) => {
     });
 });
 
-const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => {
-    console.log(`🚀 Race Server: http://localhost:${PORT}`);
-    console.log(`Watching: ${TARGET_USERNAME}`);
-});
+server.listen(3000, () => console.log(`🚀 Server on http://localhost:3000`));
