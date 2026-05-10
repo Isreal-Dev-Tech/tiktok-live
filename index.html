@@ -126,36 +126,36 @@
         const topN = document.getElementById('top-n');
 
         socket.on('updateRace', (data) => {
+            // Handle both object {countries: []} and direct Array []
             const countries = Array.isArray(data) ? data : data.countries;
-            const lastGiftedId = data.lastGiftedId;
-            const giftIcon = data.giftIcon;
+            
+            // Check if we have data to avoid errors
+            if (!countries || countries.length === 0) return;
 
-            // 1. Update Winner Box
-            if (countries.length > 0) {
-                const winner = countries;
-                topFlag.innerHTML = `
-                    <div style="font-size:20px; color:gold;">${winner.giftIcon} ${winner.gift}</div>
-                    <img src="/assets/hurray.gif" style="width:70px;">
-                    <div style="font-size:40px; margin-top:-10px;">${winner.flag}</div>
-                `;
-                topN.innerText = winner.laps;
+            // 1. UPDATE WINNER BOX (First place)
+            const winner = countries; // Get the top country
+            topFlag.innerHTML = `
+                <div style="font-size:20px; color:gold;">${winner.giftIcon} ${winner.gift}</div>
+                <img src="/assets/hurray.gif" style="width:70px;">
+                <div style="font-size:40px; margin-top:-10px;">${winner.flag} ${winner.name}</div>
+            `;
+            topN.innerText = winner.laps;
 
-                // If the winner was just gifted, spray bubbles
-                if (lastGiftedId === winner.id) {
-                    createBubbles(winner.giftIcon);
-                }
+            // Trigger bubbles if the top person is moving
+            if (data.lastGiftedId === winner.id) {
+                createBubbles(winner.giftIcon);
             }
 
-            // 2. Update Lanes
+            // 2. UPDATE RACE TRACK (Lanes 2-10)
             track.innerHTML = '';
             const runners = countries.slice(1, 10); 
 
             runners.forEach((c, index) => {
                 let lane = document.createElement('div');
                 lane.className = 'lane';
-                lane.id = `lane-${c.id}`;
                 
-                let gifType = (index <= 3) ? 'fast.gif' : 'slow.gif';
+                // Determine speed gif based on position
+                let gifType = (index <= 2) ? 'fast.gif' : 'slow.gif';
                 
                 lane.innerHTML = `
                     <div class="finish-line"></div>
@@ -167,9 +167,9 @@
                 `;
                 track.appendChild(lane);
 
-                // If this runner was just gifted, trigger the "Hit" animation
-                if (lastGiftedId === c.id) {
-                    triggerHit(c.id, giftIcon);
+                // Trigger projectile if this specific runner got a gift
+                if (data.lastGiftedId === c.id) {
+                    triggerHit(c.id, data.giftIcon || c.giftIcon);
                 }
             });
         });
@@ -181,15 +181,13 @@
             const projectile = document.createElement('div');
             projectile.className = 'gift-projectile';
             projectile.innerText = icon;
-            projectile.style.left = "-50px";
-            projectile.style.top = "20px";
+            projectile.style.left = "-20px";
+            projectile.style.top = "10px";
             
             runner.parentElement.appendChild(projectile);
 
-            // Animate flying to the runner
             setTimeout(() => {
                 projectile.style.left = runner.style.left;
-                // Add a "bump" effect to the runner
                 runner.style.transform = "scale(1.2)";
                 setTimeout(() => { 
                     runner.style.transform = "scale(1)"; 
@@ -204,11 +202,10 @@
                 b.className = 'bubble';
                 b.innerText = icon;
                 b.style.left = Math.random() * 80 + 10 + "%";
-                b.style.animationDelay = (Math.random() * 0.5) + "s";
                 document.getElementById('winner-box-ui').appendChild(b);
                 setTimeout(() => b.remove(), 3000);
             }
         }
-    </script>
+                </script>
 </body>
 </html>
