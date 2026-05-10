@@ -9,12 +9,14 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
 
+// Serve static files
 app.use('/assets', express.static(path.join(__dirname, 'assets')));
 
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'index.html'));
 });
 
+// Load and Initialize Config
 let config = JSON.parse(fs.readFileSync('./config.json'));
 
 config.countries = config.countries.map(c => ({
@@ -24,25 +26,34 @@ config.countries = config.countries.map(c => ({
     currentPos: (c.score || 0) % 100
 }));
 
+// TikTok Connection
 let tiktokUsername = "justplayingofficial"; 
 let tiktokConn = new WebcastPushConnection(tiktokUsername);
 
 tiktokConn.connect().then(state => {
-    console.log(`Connected to ${state.roomId}`);
+    console.log(`Connected to Room: ${state.roomId}`);
 }).catch(err => console.error("TikTok Connection Failed", err));
 
+// Gift Listener
 tiktokConn.on('gift', (data) => {
-    let country = config.countries.find(c => c.gift === data.giftName);
+    // Debugging: This helps you see the real name in Render logs
+    console.log(`Gift Received: ${data.giftName} (Count: ${data.repeatCount})`);
+
+    // Match gift name (Case-Insensitive to avoid errors with "Rose" vs "rose")
+    let country = config.countries.find(c => 
+        c.gift.toLowerCase() === data.giftName.toLowerCase()
+    );
     
     if (country) {
+        // Update physics/movement
         country.score += data.repeatCount;
         country.laps = Math.floor(country.score / 100);
         country.currentPos = country.score % 100;
 
-        // Sort: Leader is always index
+        // Sort so highest score is first for the top-box UI
         config.countries.sort((a, b) => b.score - a.score);
 
-        // We send 'lastGiftedId' so the HTML knows which GIF to 'hit' with the rose
+        // Send data to index.html for the 'hit' animation
         io.emit('updateRace', {
             countries: config.countries,
             lastGiftedId: country.id,
@@ -58,4 +69,3 @@ io.on('connection', (socket) => {
 
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => console.log(`Race Running on Port ${PORT}`));
-    
