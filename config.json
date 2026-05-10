@@ -4,7 +4,6 @@
     "gift_multiplier": 1
   },
   "countries": [
-    { "id": "", "name": "", "flag": "", "gift": "", "giftIcon": "", "score": 0 },
     { "id": "NG", "name": "Nigeria", "flag": "🇳🇬", "gift": "Rose", "giftIcon": "🌹", "score": 0 },
     { "id": "GH", "name": "Ghana", "flag": "🇬🇭", "gift": "Finger Heart", "giftIcon": "🫰", "score": 0 },
     { "id": "ZA", "name": "South Africa", "flag": "🇿🇦", "gift": "TikTok", "giftIcon": "🎵", "score": 0 },
