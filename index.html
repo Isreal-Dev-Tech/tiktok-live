@@ -5,7 +5,7 @@
     <style>
         body { background: #000; margin: 0; font-family: 'Arial', sans-serif; overflow: hidden; color: white; }
         
-        /* 1st Place Winner Box (The Top Part) */
+        /* 1st Place Winner Box */
         .winner-section {
             width: 100%;
             height: 150px;
@@ -14,13 +14,16 @@
             display: flex;
             position: relative;
             margin-bottom: 10px;
+            overflow: hidden;
         }
         .winner-box {
             flex: 1;
             display: flex;
+            flex-direction: column;
             align-items: center;
             justify-content: center;
-            font-size: 60px; /* Big flag for winner */
+            font-size: 60px;
+            z-index: 10;
         }
         .lap-counter {
             width: 80px;
@@ -32,20 +35,19 @@
             justify-content: center;
             font-weight: bold;
             border-left: 4px solid gold;
+            z-index: 10;
         }
-        .lap-counter span { font-size: 12px; text-transform: uppercase; }
         .lap-counter .n-value { font-size: 30px; }
 
-        /* Race Tracks (2nd to 10th Place) */
+        /* Race Tracks */
         .race-container { width: 100%; background: #111; }
         .lane { 
-            height: 60px; 
+            height: 65px; 
             border-bottom: 2px solid #333; 
             position: relative; 
             display: flex; 
             align-items: center; 
         }
-        /* The side Lap (N) counter for runners */
         .side-n {
             position: absolute;
             right: 0;
@@ -57,22 +59,43 @@
             align-items: center;
             justify-content: center;
             font-weight: bold;
-            border-left: 1px solid #444;
             z-index: 5;
         }
         .runner { 
             position: absolute; 
             left: 0; 
-            transition: left 0.5s linear; 
+            transition: left 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
             display: flex; 
             flex-direction: column; 
             align-items: center; 
             z-index: 2;
         }
-        .runner img { width: 55px; transform: scaleX(-1); } /* Flip GIF to face forward */
-        .runner .flag-small { font-size: 20px; margin-top: -5px; }
+        .runner img { width: 55px; transform: scaleX(-1); }
+        .runner .flag-small { font-size: 18px; margin-top: -5px; font-weight: bold; }
 
-        /* Finish Line effect */
+        /* GIFT HIT ANIMATION */
+        .gift-projectile {
+            position: absolute;
+            font-size: 24px;
+            z-index: 100;
+            pointer-events: none;
+            transition: all 0.5s ease-in;
+        }
+
+        /* FLOATING BUBBLES ANIMATION */
+        .bubble {
+            position: absolute;
+            bottom: -50px;
+            font-size: 30px;
+            opacity: 0.8;
+            animation: floatUp 3s linear forwards;
+            z-index: 1;
+        }
+        @keyframes floatUp {
+            0% { transform: translateY(0) translateX(0); opacity: 1; }
+            100% { transform: translateY(-200px) translateX(20px); opacity: 0; }
+        }
+
         .finish-line {
             position: absolute;
             right: 40px;
@@ -86,9 +109,7 @@
 <body>
 
     <div id="winner-box-ui" class="winner-section">
-        <div class="winner-box" id="top-flag">
-            🏁
-        </div>
+        <div class="winner-box" id="top-flag">🏁</div>
         <div class="lap-counter">
             <span>Laps (N)</span>
             <div class="n-value" id="top-n">0</div>
@@ -104,40 +125,90 @@
         const topFlag = document.getElementById('top-flag');
         const topN = document.getElementById('top-n');
 
-        socket.on('updateRace', (countries) => {
-            // 1. Update the Winner Box (Position 0)
+        socket.on('updateRace', (data) => {
+            const countries = Array.isArray(data) ? data : data.countries;
+            const lastGiftedId = data.lastGiftedId;
+            const giftIcon = data.giftIcon;
+
+            // 1. Update Winner Box
             if (countries.length > 0) {
                 const winner = countries;
                 topFlag.innerHTML = `
-                    <img src="/assets/hurray.gif" style="width:80px;">
-                    ${winner.flag}
+                    <div style="font-size:20px; color:gold;">${winner.giftIcon} ${winner.gift}</div>
+                    <img src="/assets/hurray.gif" style="width:70px; transform: scaleX(-1);">
+                    <div style="font-size:40px; margin-top:-10px;">${winner.flag}</div>
                 `;
                 topN.innerText = winner.laps;
+
+                // If the winner was just gifted, spray bubbles
+                if (lastGiftedId === winner.id) {
+                    createBubbles(winner.giftIcon);
+                }
             }
 
-            // 2. Update Race Lanes (Positions 1 to 9)
+            // 2. Update Lanes
             track.innerHTML = '';
-            // We only show up to 10th place total
             const runners = countries.slice(1, 10); 
 
             runners.forEach((c, index) => {
                 let lane = document.createElement('div');
                 lane.className = 'lane';
+                lane.id = `lane-${c.id}`;
                 
-                // Determine GIF speed based on position (index 0-3 are 2nd-5th place)
                 let gifType = (index <= 3) ? 'fast.gif' : 'slow.gif';
                 
                 lane.innerHTML = `
                     <div class="finish-line"></div>
-                    <div class="runner" style="left: ${c.currentPos}%">
+                    <div class="runner" style="left: ${c.currentPos}%" id="runner-${c.id}">
                         <img src="/assets/${gifType}">
-                        <div class="flag-small">${c.flag}</div>
+                        <div class="flag-small">${c.flag} <span style="font-size:12px; color:gold;">${c.giftIcon}</span></div>
                     </div>
                     <div class="side-n">${c.laps}</div>
                 `;
                 track.appendChild(lane);
+
+                // If this runner was just gifted, trigger the "Hit" animation
+                if (lastGiftedId === c.id) {
+                    triggerHit(c.id, giftIcon);
+                }
             });
         });
+
+        function triggerHit(countryId, icon) {
+            const runner = document.getElementById(`runner-${countryId}`);
+            if (!runner) return;
+
+            const projectile = document.createElement('div');
+            projectile.className = 'gift-projectile';
+            projectile.innerText = icon;
+            projectile.style.left = "-50px";
+            projectile.style.top = "20px";
+            
+            runner.parentElement.appendChild(projectile);
+
+            // Animate flying to the runner
+            setTimeout(() => {
+                projectile.style.left = runner.style.left;
+                // Add a "bump" effect to the runner
+                runner.style.transform = "scale(1.2)";
+                setTimeout(() => { 
+                    runner.style.transform = "scale(1)"; 
+                    projectile.remove();
+                }, 300);
+            }, 50);
+        }
+
+        function createBubbles(icon) {
+            for(let i=0; i<5; i++) {
+                const b = document.createElement('div');
+                b.className = 'bubble';
+                b.innerText = icon;
+                b.style.left = Math.random() * 80 + 10 + "%";
+                b.style.animationDelay = (Math.random() * 0.5) + "s";
+                document.getElementById('winner-box-ui').appendChild(b);
+                setTimeout(() => b.remove(), 3000);
+            }
+        }
     </script>
 </body>
 </html>
