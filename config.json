@@ -1,0 +1,18 @@
+{
+  "settings": {
+    "target_score": 100,
+    "gift_multiplier": 1
+  },
+  "countries": [
+    { "id": "NG", "name": "Nigeria", "flag": "🇳🇬", "gift": "Rose", "score": 0 },
+    { "id": "GH", "name": "Ghana", "flag": "🇬🇭", "gift": "Finger Heart", "score": 0 },
+    { "id": "ZA", "name": "South Africa", "flag": "🇿🇦", "gift": "TikTok", "score": 0 },
+    { "id": "KE", "name": "Kenya", "flag": "🇰🇪", "gift": "Rose", "score": 0 },
+    { "id": "EG", "name": "Egypt", "flag": "🇪🇬", "gift": "Finger Heart", "score": 0 },
+    { "id": "MA", "name": "Morocco", "flag": "🇲🇦", "gift": "TikTok", "score": 0 },
+    { "id": "SN", "name": "Senegal", "flag": "🇸🇳", "gift": "Rose", "score": 0 },
+    { "id": "ET", "name": "Ethiopia", "flag": "🇪🇹", "gift": "Finger Heart", "score": 0 },
+    { "id": "DZ", "name": "Algeria", "flag": "🇩🇿", "gift": "TikTok", "score": 0 },
+    { "id": "UG", "name": "Uganda", "flag": "🇺🇬", "gift": "Rose", "score": 0 }
+  ]
+}

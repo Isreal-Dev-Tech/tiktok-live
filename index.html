@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body { background: #000; margin: 0; font-family: 'Arial', sans-serif; overflow: hidden; color: white; }
+        
+        /* 1st Place Winner Box (The Top Part) */
+        .winner-section {
+            width: 100%;
+            height: 150px;
+            background: #222;
+            border: 4px solid gold;
+            display: flex;
+            position: relative;
+            margin-bottom: 10px;
+        }
+        .winner-box {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 60px; /* Big flag for winner */
+        }
+        .lap-counter {
+            width: 80px;
+            background: gold;
+            color: black;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            border-left: 4px solid gold;
+        }
+        .lap-counter span { font-size: 12px; text-transform: uppercase; }
+        .lap-counter .n-value { font-size: 30px; }
+
+        /* Race Tracks (2nd to 10th Place) */
+        .race-container { width: 100%; background: #111; }
+        .lane { 
+            height: 60px; 
+            border-bottom: 2px solid #333; 
+            position: relative; 
+            display: flex; 
+            align-items: center; 
+        }
+        /* The side Lap (N) counter for runners */
+        .side-n {
+            position: absolute;
+            right: 0;
+            width: 40px;
+            height: 100%;
+            background: #333;
+            color: gold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            border-left: 1px solid #444;
+            z-index: 5;
+        }
+        .runner { 
+            position: absolute; 
+            left: 0; 
+            transition: left 0.5s linear; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            z-index: 2;
+        }
+        .runner img { width: 55px; transform: scaleX(-1); } /* Flip GIF to face forward */
+        .runner .flag-small { font-size: 20px; margin-top: -5px; }
+
+        /* Finish Line effect */
+        .finish-line {
+            position: absolute;
+            right: 40px;
+            top: 0;
+            bottom: 0;
+            width: 5px;
+            background: repeating-linear-gradient(0deg, #fff, #fff 10px, #000 10px, #000 20px);
+        }
+    </style>
+</head>
+<body>
+
+    <div id="winner-box-ui" class="winner-section">
+        <div class="winner-box" id="top-flag">
+            🏁
+        </div>
+        <div class="lap-counter">
+            <span>Laps (N)</span>
+            <div class="n-value" id="top-n">0</div>
+        </div>
+    </div>
+
+    <div id="raceTrack" class="race-container"></div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io();
+        const track = document.getElementById('raceTrack');
+        const topFlag = document.getElementById('top-flag');
+        const topN = document.getElementById('top-n');
+
+        socket.on('updateRace', (countries) => {
+            // 1. Update the Winner Box (Position 0)
+            if (countries.length > 0) {
+                const winner = countries;
+                topFlag.innerHTML = `
+                    <img src="/assets/hurray.gif" style="width:80px;">
+                    ${winner.flag}
+                `;
+                topN.innerText = winner.laps;
+            }
+
+            // 2. Update Race Lanes (Positions 1 to 9)
+            track.innerHTML = '';
+            // We only show up to 10th place total
+            const runners = countries.slice(1, 10); 
+
+            runners.forEach((c, index) => {
+                let lane = document.createElement('div');
+                lane.className = 'lane';
+                
+                // Determine GIF speed based on position (index 0-3 are 2nd-5th place)
+                let gifType = (index <= 3) ? 'fast.gif' : 'slow.gif';
+                
+                lane.innerHTML = `
+                    <div class="finish-line"></div>
+                    <div class="runner" style="left: ${c.currentPos}%">
+                        <img src="/assets/${gifType}">
+                        <div class="flag-small">${c.flag}</div>
+                    </div>
+                    <div class="side-n">${c.laps}</div>
+                `;
+                track.appendChild(lane);
+            });
+        });
+    </script>
+</body>
+</html>
