@@ -10,12 +10,13 @@ const server = http.createServer(app);
 const io = new Server(server);
 
 // --- CONFIGURATION ---
-const TIKTOOL_API_KEY = "tk_91ec88c2870958d10d58fbcfe4e73840d018705e201a96c1"; // PASTE YOUR KEY HERE
-const TARGET_USERNAME = ""; 
+const TIKTOOL_API_KEY = "tk_91ec88c2870958d10d58fbcfe4e73840d018705e201a96c1"; 
+const TARGET_USERNAME = "ellgaming69"; // Updated to match your previous logs
 
 app.use('/assets', express.static(path.join(__dirname, 'assets')));
 app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'index.html')));
 
+// Load initial configuration
 let config = JSON.parse(fs.readFileSync('./config.json'));
 config.countries = config.countries.map(c => ({
     ...c,
@@ -28,11 +29,25 @@ config.countries = config.countries.map(c => ({
 const tiktok = new TikTokLive({
     uniqueId: TARGET_USERNAME,
     apiKey: TIKTOOL_API_KEY,
-    autoReconnect: true
+    autoReconnect: true,
+    // Using the msToken you found to bypass the cookie error
+    msToken: "6ETzAhBBOArIqqMdRdrBzGhlLFbxQQZ7-s1-1fnC0oznfjwTtC9u37En376xGSmhFzrtAmPKL6cBq-LTluMcTmfm8IMTPLR3z9JqKNDA02GFHs3D4Ti1hXJxypCIJz4W1XUsqm1UgbFZjUdcSU9Pjmmd",
+    clientParams: {
+        "user_agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Mobile Safari/537.36"
+    }
 });
 
-tiktok.on('connected', () => console.log(`✅ Connected to ${TARGET_USERNAME}`));
-tiktok.on('error', (err) => console.error("❌ Connection Error:", err.message));
+tiktok.on('connected', () => {
+    console.log(`✅ SUCCESS: Connected to ${TARGET_USERNAME}`);
+    console.log("Nigeria is ready to move!");
+});
+
+tiktok.on('error', (err) => {
+    console.error("❌ Connection Error:", err.message);
+    if (err.message.includes("session cookie")) {
+        console.log("👉 Tip: Try logging out and back in on your browser to refresh the session.");
+    }
+});
 
 tiktok.on('gift', (data) => {
     console.log(`🎁 Gift: ${data.giftName} x${data.repeatCount}`);
@@ -43,11 +58,15 @@ tiktok.on('gift', (data) => {
     );
     
     if (country) {
+        // Move the runner based on gift count
         country.score += data.repeatCount;
         country.laps = Math.floor(country.score / 100);
         country.currentPos = country.score % 100;
+        
+        // Update the leaderboard ranking
         config.countries.sort((a, b) => b.score - a.score);
 
+        // Send movement to the HTML page
         io.emit('updateRace', {
             countries: config.countries,
             lastGiftedId: country.id,
@@ -58,7 +77,12 @@ tiktok.on('gift', (data) => {
 
 tiktok.connect();
 
-io.on('connection', (socket) => socket.emit('updateRace', { countries: config.countries }));
+io.on('connection', (socket) => {
+    socket.emit('updateRace', { countries: config.countries });
+});
 
 const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => console.log(`🚀 Server on http://localhost:${PORT}`));
+server.listen(PORT, () => {
+    console.log(`🚀 Race Server running on http://localhost:${PORT}`);
+    console.log(`Streaming live data for: ${TARGET_USERNAME}`);
+});
