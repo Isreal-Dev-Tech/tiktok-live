@@ -4,15 +4,13 @@
   "description": "Interactive TikTok Live Running Man Race",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node server.js"
   },
   "dependencies": {
     "express": "^4.18.2",
     "socket.io": "^4.7.2",
-    "tiktok-live-connector": "^1.2.1",
-    "fs": "0.0.1-security"
+    "tiktok-live-api": "^1.2.3"
   },
-  "author": "",
+  "author": "Fasasi Isreal Abiola",
   "license": "ISC"
 }
