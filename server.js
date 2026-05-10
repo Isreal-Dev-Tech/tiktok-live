@@ -28,7 +28,7 @@ config.countries = config.countries.map(c => ({
     currentPos: (c.score || 0) % 100 // Position on the 1-100 track
 }));
 
-let tiktokUsername = "YOUR_TIKTOK_USERNAME"; 
+let tiktokUsername = "bigshank_0"; 
 let tiktokConn = new WebcastPushConnection(tiktokUsername);
 
 tiktokConn.connect().then(state => {
