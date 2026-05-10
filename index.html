@@ -5,7 +5,6 @@
     <style>
         body { background: #000; margin: 0; font-family: 'Arial', sans-serif; overflow: hidden; color: white; }
         
-        /* 1st Place Winner Box */
         .winner-section {
             width: 100%;
             height: 150px;
@@ -39,7 +38,6 @@
         }
         .lap-counter .n-value { font-size: 30px; }
 
-        /* Race Tracks */
         .race-container { width: 100%; background: #111; }
         .lane { 
             height: 65px; 
@@ -73,7 +71,6 @@
         .runner img { width: 55px; transform: scaleX(-1); }
         .runner .flag-small { font-size: 18px; margin-top: -5px; font-weight: bold; }
 
-        /* GIFT HIT ANIMATION */
         .gift-projectile {
             position: absolute;
             font-size: 24px;
@@ -82,7 +79,6 @@
             transition: all 0.5s ease-in;
         }
 
-        /* FLOATING BUBBLES ANIMATION */
         .bubble {
             position: absolute;
             bottom: -50px;
@@ -126,17 +122,23 @@
         const topN = document.getElementById('top-n');
 
         socket.on('updateRace', (data) => {
-            // Cleanly handle data whether it's an array or the new object format
-            const countries = data.allCountries || (Array.isArray(data) ? data : data.countries);
-            const winner = data.winner || (countries ? countries : null);
+            // FIX: Correctly extract the array and the winner object
+            const countries = data.allCountries || (Array.isArray(data) ? data : []);
             
-            if (!winner || !countries) return;
+            // If the server sends the winner as part of the object, use it; 
+            // otherwise, grab the first item from the array.
+            let winner = data.winner;
+            if (!winner && countries.length > 0) {
+                winner = countries;
+            }
+            
+            if (!winner || countries.length === 0) return;
 
-            // 1. UPDATE WINNER BOX
+            // 1. UPDATE WINNER BOX (No more undefined)
             topFlag.innerHTML = `
-                <div style="font-size:20px; color:gold;">${winner.giftIcon} ${winner.gift}</div>
+                <div style="font-size:20px; color:gold;">${winner.giftIcon || ''} ${winner.gift || ''}</div>
                 <img src="/assets/hurray.gif" style="width:70px;">
-                <div style="font-size:40px; margin-top:-10px;">${winner.flag} ${winner.name}</div>
+                <div style="font-size:40px; margin-top:-10px;">${winner.flag || ''} ${winner.name || ''}</div>
             `;
             topN.innerText = winner.laps || 0;
 
@@ -144,26 +146,27 @@
                 createBubbles(winner.giftIcon);
             }
 
-            // 2. UPDATE RACE TRACK (Lanes 2-10)
+            // 2. UPDATE RACE TRACK (Lanes)
             track.innerHTML = '';
-            const runners = countries.slice(1, 10); 
-
-            runners.forEach((c, index) => {
+            // We show all countries in the race lanes
+            countries.forEach((c, index) => {
                 let lane = document.createElement('div');
                 lane.className = 'lane';
                 
+                // Top 3 get the 'fast' gif
                 let gifType = (index <= 2) ? 'fast.gif' : 'slow.gif';
                 
                 lane.innerHTML = `
                     <div class="finish-line"></div>
-                    <div class="runner" style="left: ${c.currentPos}%" id="runner-${c.id}">
+                    <div class="runner" style="left: ${c.currentPos || 0}%" id="runner-${c.id}">
                         <img src="/assets/${gifType}">
-                        <div class="flag-small">${c.flag} ${c.name} <span style="font-size:12px; color:gold;">${c.giftIcon}</span></div>
+                        <div class="flag-small">${c.flag || ''} ${c.name || ''}</div>
                     </div>
                     <div class="side-n">${c.laps || 0}</div>
                 `;
                 track.appendChild(lane);
 
+                // Trigger projectile hit if this country was just gifted
                 if (data.lastGiftedId === c.id) {
                     triggerHit(c.id, data.lastGiftIcon || c.giftIcon);
                 }
