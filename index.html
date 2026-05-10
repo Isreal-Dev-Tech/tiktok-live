@@ -126,22 +126,20 @@
         const topN = document.getElementById('top-n');
 
         socket.on('updateRace', (data) => {
-            // Handle both object {countries: []} and direct Array []
-            const countries = Array.isArray(data) ? data : data.countries;
+            // Cleanly handle data whether it's an array or the new object format
+            const countries = data.allCountries || (Array.isArray(data) ? data : data.countries);
+            const winner = data.winner || (countries ? countries : null);
             
-            // Check if we have data to avoid errors
-            if (!countries || countries.length === 0) return;
+            if (!winner || !countries) return;
 
-            // 1. UPDATE WINNER BOX (First place)
-            const winner = countries; // Get the top country
+            // 1. UPDATE WINNER BOX
             topFlag.innerHTML = `
                 <div style="font-size:20px; color:gold;">${winner.giftIcon} ${winner.gift}</div>
                 <img src="/assets/hurray.gif" style="width:70px;">
                 <div style="font-size:40px; margin-top:-10px;">${winner.flag} ${winner.name}</div>
             `;
-            topN.innerText = winner.laps;
+            topN.innerText = winner.laps || 0;
 
-            // Trigger bubbles if the top person is moving
             if (data.lastGiftedId === winner.id) {
                 createBubbles(winner.giftIcon);
             }
@@ -154,22 +152,20 @@
                 let lane = document.createElement('div');
                 lane.className = 'lane';
                 
-                // Determine speed gif based on position
                 let gifType = (index <= 2) ? 'fast.gif' : 'slow.gif';
                 
                 lane.innerHTML = `
                     <div class="finish-line"></div>
                     <div class="runner" style="left: ${c.currentPos}%" id="runner-${c.id}">
                         <img src="/assets/${gifType}">
-                        <div class="flag-small">${c.flag} <span style="font-size:12px; color:gold;">${c.giftIcon}</span></div>
+                        <div class="flag-small">${c.flag} ${c.name} <span style="font-size:12px; color:gold;">${c.giftIcon}</span></div>
                     </div>
-                    <div class="side-n">${c.laps}</div>
+                    <div class="side-n">${c.laps || 0}</div>
                 `;
                 track.appendChild(lane);
 
-                // Trigger projectile if this specific runner got a gift
                 if (data.lastGiftedId === c.id) {
-                    triggerHit(c.id, data.giftIcon || c.giftIcon);
+                    triggerHit(c.id, data.lastGiftIcon || c.giftIcon);
                 }
             });
         });
@@ -206,6 +202,6 @@
                 setTimeout(() => b.remove(), 3000);
             }
         }
-                </script>
+    </script>
 </body>
 </html>
