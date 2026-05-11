@@ -17,7 +17,7 @@ app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'index.html'));
 });
 
-const POINTS_PER_LAP = 100;
+const POINTS_PER_LAP = 50;
 const recordsPath = path.join(__dirname, 'records.json');
 
 // Create records.json if not existing
