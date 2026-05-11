@@ -6,7 +6,7 @@
     <style>
         body { background: #050505; margin: 0; overflow: hidden; font-family: 'Segoe UI', sans-serif; color: white; }
 
-        /* ========================= TOP LEADERBOARD ========================== */
+        /* Podium styling stays the same */
         .podium-container {
             display: flex; justify-content: space-around; align-items: center;
             height: 100px; background: linear-gradient(180deg,#1a1a2e 0%,#16213e 100%);
@@ -21,12 +21,15 @@
             font-weight: bold; box-shadow: 0 0 12px #4834d4;
         }
 
-        /* ========================= RACE TRACK ========================== */
-        .race-container { width: 100%; height: calc(100vh - 100px); overflow: hidden; }
+        /* Race Track Styling */
+        .race-container { width: 100%; height: calc(100vh - 100px); overflow: hidden; position: relative; }
+        
         .lane {
-            position: relative; height: 52px; overflow: hidden;
+            position: absolute; /* Changed to absolute for smooth re-ordering */
+            width: 100%; height: 52px; overflow: hidden;
             border-bottom: 1px solid rgba(72,52,212,0.2);
-            transition: top 0.5s ease-in-out; /* Smooth lane swapping */
+            transition: top 0.5s ease-in-out; 
+            left: 0;
         }
         .lane:nth-child(odd) { background: linear-gradient(90deg,#0f0c29,#302b63,#24243e); }
         .lane:nth-child(even) { background: linear-gradient(90deg,#200122,#400000); }
@@ -36,7 +39,6 @@
             font-size: 26px; font-weight: 900; font-style: italic;
             color: rgba(255,255,255,0.05); text-transform: uppercase;
             animation: tickerMove 12s linear infinite; z-index: 1;
-            user-select: none; pointer-events: none;
         }
         @keyframes tickerMove { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
 
@@ -44,10 +46,9 @@
         .ticker-boost { color: #00ff88; text-shadow: 0 0 10px #00ff88; }
         .start-gift { position: absolute; left: 12px; top: 10px; font-size: 26px; z-index: 10; }
 
-        /* ========================= RUNNER ========================== */
         .runner {
             position: absolute; top: 5px; display: flex; align-items: center;
-            transition: left 0.8s cubic-bezier(0.15,0.88,0.3,1); /* Crucial for smooth sliding */
+            transition: left 0.8s cubic-bezier(0.15,0.88,0.3,1); 
             z-index: 5;
         }
         .flag-tail { font-size: 26px; margin-right: 8px; }
@@ -99,41 +100,46 @@
         socket.on('updateRace', (data) => {
             const countries = data.allCountries || [];
 
-            // Update podium rankings
             updatePodium('p1', data.winner);
             updatePodium('p2', data.second);
             updatePodium('p3', data.third);
 
-            // Re-render lanes
-            // Optimization: Instead of innerHTML = '', we replace content to prevent flicker
-            let newHTML = '';
-            countries.slice(0, 20).forEach((c) => {
+            countries.slice(0, 20).forEach((c, index) => {
+                let lane = document.getElementById(`lane-${c.id}`);
                 const isGifting = data.lastGiftedId === c.id;
+
+                // Create lane if it doesn't exist
+                if (!lane) {
+                    lane = document.createElement('div');
+                    lane.className = 'lane';
+                    lane.id = `lane-${c.id}`;
+                    track.appendChild(lane);
+                }
+
+                // Update lane position (for sorting top countries)
+                lane.style.top = `${index * 52}px`;
+
                 const boostText = isGifting ? 
                     `<span class="sender-name">${data.senderName}</span> <span class="ticker-boost">+${data.lastGiftAmount}x ${c.giftIcon}</span>` : '';
                 
-                newHTML += `
-                    <div class="lane" id="lane-${c.id}">
-                        <div class="news-ticker">
-                            ${c.name} ${boostText} &nbsp;&nbsp; • &nbsp;&nbsp; ${c.name} ${boostText}
-                        </div>
-                        <div class="start-gift">${c.giftIcon}</div>
-                        <div class="finish-line"></div>
-                        <div class="live-score">${c.score}</div>
-                        <div class="runner" id="runner-${c.id}" style="left: calc(${c.currentPos}% + 45px)">
-                            <div class="flag-tail">${c.flag}</div>
-                            <img src="/assets/fast.gif" class="runner-img ${isGifting ? 'boosting' : ''}">
-                        </div>
-                    </div>`;
-            });
-            
-            track.innerHTML = newHTML;
+                // Update only inner content if needed
+                lane.innerHTML = `
+                    <div class="news-ticker">
+                        ${c.name} ${boostText} &nbsp;&nbsp; • &nbsp;&nbsp; ${c.name} ${boostText}
+                    </div>
+                    <div class="start-gift">${c.giftIcon}</div>
+                    <div class="finish-line"></div>
+                    <div class="live-score">${c.score}</div>
+                    <div class="runner" id="runner-${c.id}" style="left: calc(${c.currentPos}% + 45px)">
+                        <div class="flag-tail">${c.flag}</div>
+                        <img src="/assets/fast.gif" class="runner-img ${isGifting ? 'boosting' : ''}">
+                    </div>
+                `;
 
-            // Trigger Gift Animation
-            if (data.lastGiftedId) {
-                const country = countries.find(x => x.id === data.lastGiftedId);
-                if (country) flyGift(country.id, country.giftIcon);
-            }
+                if (isGifting) {
+                    flyGift(c.id, c.giftIcon);
+                }
+            });
         });
 
         function flyGift(id, icon) {
@@ -146,10 +152,8 @@
             projectile.innerText = icon;
             projectile.style.left = '20px';
             projectile.style.top = '12px';
-
             lane.appendChild(projectile);
 
-            // Using requestAnimationFrame for smoother start
             requestAnimationFrame(() => {
                 projectile.style.left = runner.style.left;
                 setTimeout(() => { projectile.remove(); }, 500);
@@ -163,7 +167,6 @@
             const lapsEl = el.querySelector('.podium-laps');
 
             if (player && player.wins > 0) {
-                // Only change if the content is different to prevent flickering
                 if (flagEl.innerText !== player.flag) flagEl.innerText = player.flag;
                 lapsEl.innerText = `${player.wins} Wins`;
             } else {
