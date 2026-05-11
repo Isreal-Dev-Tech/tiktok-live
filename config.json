@@ -1,28 +1,28 @@
 {
   "settings": {
-    "target_score": 150,
+    "target_score": 100,
     "gift_multiplier": 1
   },
   "countries": [
     { "id": "NG", "name": "Nigeria", "flag": "🇳🇬", "gift": "Rose", "giftIcon": "🌹", "score": 0 },
     { "id": "GH", "name": "Ghana", "flag": "🇬🇭", "gift": "Finger Heart", "giftIcon": "🫰", "score": 0 },
     { "id": "ZA", "name": "South Africa", "flag": "🇿🇦", "gift": "TikTok", "giftIcon": "🎵", "score": 0 },
-    { "id": "KE", "name": "Kenya", "flag": "🇰🇪", "gift": "Cap", "giftIcon": "🧢", "score": 0 },
+    { "id": "KE", "name": "Kenya", "flag": "🇰🇪", "gift": "GG", "giftIcon": "🎮", "score": 0 },
     { "id": "EG", "name": "Egypt", "flag": "🇪🇬", "gift": "Ice Cream", "giftIcon": "🍦", "score": 0 },
     { "id": "MA", "name": "Morocco", "flag": "🇲🇦", "gift": "Doughnut", "giftIcon": "🍩", "score": 0 },
-    { "id": "SN", "name": "Senegal", "flag": "🇸🇳", "gift": "Weightlifting", "giftIcon": "🏋️", "score": 0 },
+    { "id": "SN", "name": "Senegal", "flag": "🇸🇳", "gift": "Heart Me", "giftIcon": "🫶", "score": 0 },
     { "id": "ET", "name": "Ethiopia", "flag": "🇪🇹", "gift": "Panda", "giftIcon": "🐼", "score": 0 },
     { "id": "DZ", "name": "Algeria", "flag": "🇩🇿", "gift": "Chili", "giftIcon": "🌶️", "score": 0 },
     { "id": "UG", "name": "Uganda", "flag": "🇺🇬", "gift": "Mic", "giftIcon": "🎤", "score": 0 },
-    { "id": "CI", "name": "Ivory Coast", "flag": "🇨🇮", "gift": "GG", "giftIcon": "🎮", "score": 0 },
-    { "id": "CM", "name": "Cameroon", "flag": "🇨🇲", "gift": "Heart Me", "giftIcon": "🫶", "score": 0 },
-    { "id": "RW", "name": "Rwanda", "flag": "🇷🇼", "gift": "Coffee", "giftIcon": "☕", "score": 0 },
-    { "id": "TZ", "name": "Tanzania", "flag": "🇹🇿", "gift": "Confetti", "giftIcon": "🎊", "score": 0 },
+    { "id": "CI", "name": "Ivory Coast", "flag": "🇨🇮", "gift": "Coffee", "giftIcon": "☕", "score": 0 },
+    { "id": "CM", "name": "Cameroon", "flag": "🇨🇲", "gift": "Baseball", "giftIcon": "⚾", "score": 0 },
+    { "id": "RW", "name": "Rwanda", "flag": "🇷🇼", "gift": "Tennis", "giftIcon": "🎾", "score": 0 },
+    { "id": "TZ", "name": "Tanzania", "flag": "🇹🇿", "gift": "Fire", "giftIcon": "🔥", "score": 0 },
     { "id": "AO", "name": "Angola", "flag": "🇦🇴", "gift": "Hand Wave", "giftIcon": "👋", "score": 0 },
     { "id": "TN", "name": "Tunisia", "flag": "🇹🇳", "gift": "Paper Crane", "giftIcon": "🦢", "score": 0 },
     { "id": "ML", "name": "Mali", "flag": "🇲🇱", "gift": "Football", "giftIcon": "⚽", "score": 0 },
     { "id": "CD", "name": "DR Congo", "flag": "🇨🇩", "gift": "Lightning", "giftIcon": "⚡", "score": 0 },
-    { "id": "BF", "name": "Burkina Faso", "flag": "🇧🇫", "gift": "Fire", "giftIcon": "🔥", "score": 0 },
+    { "id": "BF", "name": "Burkina Faso", "flag": "🇧🇫", "gift": "Gamepad", "giftIcon": "🕹️", "score": 0 },
     { "id": "ZM", "name": "Zambia", "flag": "🇿🇲", "gift": "Diamond", "giftIcon": "💎", "score": 0 }
   ]
 }
