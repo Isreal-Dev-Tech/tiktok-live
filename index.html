@@ -45,6 +45,9 @@
             100% { transform: translateX(-50%); }
         }
 
+        /* Highlight gift amount in ticker */
+        .ticker-boost { color: #00ff88; font-size: 28px; text-shadow: 0 0 10px #00ff88; }
+
         .start-gift {
             position: absolute; left: 12px; font-size: 26px; 
             z-index: 10; filter: drop-shadow(0 0 8px gold);
@@ -108,7 +111,6 @@
         socket.on('updateRace', (data) => {
             const countries = data.allCountries || [];
             
-            // Fix Undefined by checking if country exists
             updatePodium('p1', data.winner);
             updatePodium('p2', data.second);
             updatePodium('p3', data.third);
@@ -120,8 +122,11 @@
                 lane.className = 'lane';
                 lane.id = `lane-${c.id}`;
                 
+                // If this country was gifted, show the amount in the background ticker
+                const boostText = isGifting ? ` <span class="ticker-boost">+${data.lastGiftAmount}x ${c.giftIcon}</span>` : '';
+                
                 lane.innerHTML = `
-                    <div class="news-ticker">${c.name} &nbsp;&nbsp; • &nbsp;&nbsp; ${c.name} &nbsp;&nbsp; • &nbsp;&nbsp; ${c.name}</div>
+                    <div class="news-ticker">${c.name}${boostText} &nbsp;&nbsp; • &nbsp;&nbsp; ${c.name}${boostText} &nbsp;&nbsp; • &nbsp;&nbsp; ${c.name}</div>
                     <div class="start-gift">${c.giftIcon}</div>
                     <div class="finish-line"></div>
                     <div class="runner" style="left: calc(${c.currentPos}% + 45px)" id="runner-${c.id}">
@@ -162,7 +167,6 @@
             const flagEl = el.querySelector('.podium-flag');
             const lapsEl = el.querySelector('.podium-laps');
 
-            // If country exists and has score, show data. Else show placeholder.
             if (country && country.score > 0) {
                 flagEl.innerText = country.flag;
                 lapsEl.innerText = `Laps: ${country.laps}`;
