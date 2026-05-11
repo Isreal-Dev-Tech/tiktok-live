@@ -15,7 +15,7 @@ const TARGET_USERNAME = "q24gzn4";
 app.use('/assets', express.static(path.join(__dirname, 'assets')));
 app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'index.html')));
 
-const POINTS_PER_LAP = 150; 
+const POINTS_PER_LAP = 100; 
 
 let giftComboTracker = {};
 let rawConfig = JSON.parse(fs.readFileSync('./config.json'));
