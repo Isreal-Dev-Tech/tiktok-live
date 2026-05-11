@@ -43,7 +43,7 @@ function ensureRecordsFile() {
 }
 
 // ===============================
-// 2. LOAD CONFIG WITH ERROR HANDLING
+// 2. LOAD CONFIG
 // ===============================
 let countriesList = [];
 try {
@@ -57,7 +57,7 @@ try {
     console.log(`✅ Config Loaded: ${countriesList.length} countries ready.`);
 } catch (err) {
     console.error("❌ STARTUP ERROR: Failed to load config.json!", err.message);
-    process.exit(1); // Stop the server if config is broken
+    process.exit(1);
 }
 
 let giftComboTracker = {};
@@ -74,18 +74,20 @@ function getLeaderboard() {
             if (!winCounts[w.name]) {
                 winCounts[w.name] = {
                     name: w.name, flag: w.flag, wins: 0,
-                    firstTimestamp: w.timestamp || Date.now()
+                    lastWinTime: w.timestamp || Date.now()
                 };
             }
             winCounts[w.name].wins += 1;
+            // Update timestamp so if wins are tied, the one who won most recently is higher
+            winCounts[w.name].lastWinTime = w.timestamp; 
         });
 
         return Object.values(winCounts).sort((a, b) => {
             if (b.wins !== a.wins) return b.wins - a.wins;
-            return a.firstTimestamp - b.firstTimestamp;
+            return b.lastWinTime - a.lastWinTime; // Tie-breaker: most recent win
         });
     } catch (err) {
-        console.error("❌ LEADERBOARD CALCULATION ERROR:", err.message);
+        console.error("❌ LEADERBOARD ERROR:", err.message);
         return [];
     }
 }
@@ -107,7 +109,6 @@ tiktok.on('gift', (data) => {
         const trackingId = `${data.userId}_${data.giftName}`;
         let countToProcess = 0;
 
-        // 1. Determine how many new gifts to add since the last update
         if (data.repeatEnd) {
             countToProcess = data.repeatCount - (giftComboTracker[trackingId] || 0);
             delete giftComboTracker[trackingId];
@@ -118,84 +119,67 @@ tiktok.on('gift', (data) => {
 
         if (countToProcess <= 0) return;
 
-        const senderName = data.uniqueId || (data.user && data.user.uniqueId) || "User";
+        const senderName = data.uniqueId || "User";
         const country = countriesList.find(c => c.gift.toLowerCase() === data.giftName.toLowerCase());
 
-        if (!country) {
-            console.log(`⚠️ Unmapped Gift: ${data.giftName} from ${senderName}`);
-            return;
-        }
+        if (!country) return;
 
-        console.log(`🎁 [GIFT] ${senderName} -> ${countToProcess}x ${data.giftName} (${country.name})`);
-
-        // 2. THE FIX: Loop through each gift so the lap logic triggers correctly for each one
+        // Loop through each gift to check for Lap Completions
         for (let i = 0; i < countToProcess; i++) {
             const oldLaps = Math.floor(country.score / POINTS_PER_LAP);
-            country.score += 1; // Move 1 point at a time
+            country.score += 1;
             const newLaps = Math.floor(country.score / POINTS_PER_LAP);
 
-            // Check if this specific gift completed a lap
             if (newLaps > oldLaps) {
                 const records = ensureRecordsFile();
-                records.winners.push({ name: country.name, flag: country.flag, timestamp: Date.now() });
+                records.winners.push({ 
+                    name: country.name, 
+                    flag: country.flag, 
+                    timestamp: Date.now() 
+                });
                 fs.writeFileSync(recordsPath, JSON.stringify(records, null, 2));
-                console.log(`🏆 [WIN] ${country.name} finished a lap!`);
+                console.log(`🏆 [WIN] ${country.name} finished a lap! Total Wins: ${newLaps}`);
             }
         }
 
-        // 3. Update Visuals
         country.currentPos = ((country.score % POINTS_PER_LAP) / POINTS_PER_LAP) * 80;
-        countriesList.sort((a, b) => b.score - a.score);
+        
+        // Update Leaderboard Data
+        const sortedLeaders = getLeaderboard();
 
-        const leaders = getLeaderboard();
-
+        // EMIT UPDATED RANKINGS
         io.emit('updateRace', {
-            allCountries: countriesList,
-            winner: leaders || null, // Fixed: getLeaderboard returns an array, pick specific spots
-            second: leaders || null,
-            third: leaders || null,
+            allCountries: countriesList.sort((a, b) => b.score - a.score),
+            winner: sortedLeaders || { flag: "🏆", wins: 0 }, // 1st Place
+            second: sortedLeaders || { flag: "🏆", wins: 0 }, // 2nd Place
+            third: sortedLeaders || { flag: "🏆", wins: 0 },  // 3rd Place
             lastGiftedId: country.id,
             lastGiftAmount: countToProcess,
             senderName: senderName
         });
 
     } catch (err) {
-        console.error("❌ ERROR DURING GIFT PROCESSING:", err);
+        console.error("❌ GIFT PROCESSING ERROR:", err);
     }
 });
 
-        
+tiktok.on('connected', () => console.log(`✅ Connected: ${TARGET_USERNAME}`));
+tiktok.on('disconnected', () => console.log("⚠️ Disconnected!"));
+tiktok.on('error', (err) => console.error("❌ TIKTOK ERROR:", err));
 
-// TikTok Status Logs
-tiktok.on('connected', () => console.log(`✅ SUCCESS: Connected to TikTok User: ${TARGET_USERNAME}`));
-tiktok.on('disconnected', () => console.log("⚠️ WARNING: TikTok Disconnected!"));
-tiktok.on('error', (err) => console.error("❌ TIKTOK SDK ERROR:", err));
+try { tiktok.connect(); } catch (err) {}
 
-try {
-    tiktok.connect();
-} catch (err) {
-    console.error("❌ FAILED TO INITIATE TIKTOK CONNECTION:", err.message);
-}
-
-// Socket Connection Logs
 io.on('connection', (socket) => {
-    try {
-        const leaders = getLeaderboard();
-        socket.emit('updateRace', {
-            allCountries: countriesList,
-            winner: leaders || null,
-            second: leaders || null,
-            third: leaders || null
-        });
-        console.log(`🟢 Browser connected (Total Clients: ${io.engine.clientsCount})`);
-    } catch (err) {
-        console.error("❌ SOCKET INITIAL LOAD ERROR:", err.message);
-    }
+    const leaders = getLeaderboard();
+    socket.emit('updateRace', {
+        allCountries: countriesList,
+        winner: leaders || null,
+        second: leaders || null,
+        third: leaders || null
+    });
 });
 
 server.listen(3000, () => {
-    console.log("------------------------------------------");
-    console.log("🚀 RACE SERVER RUNNING AT http://localhost:3000");
-    console.log("------------------------------------------");
+    console.log("🚀 SERVER RUNNING AT http://localhost:3000");
 });
-                                   
+    
