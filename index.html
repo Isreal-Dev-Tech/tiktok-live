@@ -9,13 +9,13 @@
         .podium-container {
             display: flex; justify-content: space-around;
             background: linear-gradient(180deg, #1a1a2e 0%, #16213e 100%);
-            padding: 10px; border-bottom: 2px solid #4834d4; height: 95px;
+            padding: 10px; border-bottom: 3px solid #4834d4; height: 95px;
             box-shadow: 0 4px 15px rgba(0,0,0,0.8);
         }
         .podium-item { text-align: center; width: 30%; position: relative; }
         .podium-rank { font-size: 11px; letter-spacing: 2px; font-weight: bold; color: #70a1ff; margin-bottom: 2px; text-transform: uppercase; }
-        .podium-flag { font-size: 38px; filter: drop-shadow(0 0 8px rgba(255,255,255,0.3)); }
-        .podium-laps { font-size: 14px; background: #4834d4; color: #fff; padding: 2px 12px; font-weight: bold; border-radius: 50px; display: inline-block; box-shadow: 0 0 10px #4834d4; }
+        .podium-flag { font-size: 38px; filter: drop-shadow(0 0 8px rgba(255,255,255,0.3)); height: 45px; }
+        .podium-laps { font-size: 13px; background: #4834d4; color: #fff; padding: 2px 12px; font-weight: bold; border-radius: 50px; display: inline-block; box-shadow: 0 0 10px #4834d4; margin-top: 5px; }
 
         /* Neon Racing Tracks */
         .race-container { width: 100%; height: calc(100vh - 115px); overflow: hidden; }
@@ -30,11 +30,11 @@
         .lane:nth-child(odd) { background: linear-gradient(90deg, #0f0c29, #302b63, #24243e); }
         .lane:nth-child(even) { background: linear-gradient(90deg, #200122, #400000); }
 
-        /* NEWS TICKER STYLE NAME (Background Crawl) */
+        /* NEWS TICKER STYLE NAME */
         .news-ticker {
             position: absolute; width: 200%; white-space: nowrap;
             font-size: 26px; font-weight: 900; font-style: italic;
-            color: rgba(255, 255, 255, 0.05); /* Faded TV Background look */
+            color: rgba(255, 255, 255, 0.05);
             text-transform: uppercase;
             animation: tickerMove 12s linear infinite;
             z-index: 1; pointer-events: none;
@@ -72,7 +72,6 @@
             transition: all 0.5s ease-in; filter: drop-shadow(0 0 12px white);
         }
 
-        /* Power-up Glow when gifting */
         .boosting { 
             filter: brightness(1.8) drop-shadow(0 0 15px #70a1ff) !important; 
             transform: scale(1.2) scaleX(-1) !important; 
@@ -82,9 +81,21 @@
 <body>
 
     <div class="podium-container">
-        <div class="podium-item" id="p1"><div class="podium-rank">Top Leader</div><div class="podium-flag">🏁</div><div class="podium-laps">0</div></div>
-        <div class="podium-item" id="p2"><div class="podium-rank">Challenger</div><div class="podium-flag">🏁</div><div class="podium-laps">0</div></div>
-        <div class="podium-item" id="p3"><div class="podium-rank">Contender</div><div class="podium-flag">🏁</div><div class="podium-laps">0</div></div>
+        <div class="podium-item" id="p1">
+            <div class="podium-rank">1ST PLACE</div>
+            <div class="podium-flag">🏆</div>
+            <div class="podium-laps">---</div>
+        </div>
+        <div class="podium-item" id="p2">
+            <div class="podium-rank">2ND PLACE</div>
+            <div class="podium-flag">🏆</div>
+            <div class="podium-laps">---</div>
+        </div>
+        <div class="podium-item" id="p3">
+            <div class="podium-rank">3RD PLACE</div>
+            <div class="podium-flag">🏆</div>
+            <div class="podium-laps">---</div>
+        </div>
     </div>
 
     <div id="raceTrack" class="race-container"></div>
@@ -97,12 +108,11 @@
         socket.on('updateRace', (data) => {
             const countries = data.allCountries || [];
             
-            // Update Top 3 Podium
-            if (data.winner) updatePodium('p1', data.winner);
-            if (data.second) updatePodium('p2', data.second);
-            if (data.third) updatePodium('p3', data.third);
+            // Fix Undefined by checking if country exists
+            updatePodium('p1', data.winner);
+            updatePodium('p2', data.second);
+            updatePodium('p3', data.third);
 
-            // Re-render Top 20 Lanes
             track.innerHTML = '';
             countries.slice(0, 20).forEach((c) => {
                 const isGifting = data.lastGiftedId === c.id;
@@ -110,9 +120,8 @@
                 lane.className = 'lane';
                 lane.id = `lane-${c.id}`;
                 
-                // The ticker displays the country name multiple times for the crawl effect
                 lane.innerHTML = `
-                    <div class="news-ticker">${c.name} &nbsp;&nbsp; • &nbsp;&nbsp; ${c.name} &nbsp;&nbsp; • &nbsp;&nbsp; ${c.name} &nbsp;&nbsp; • &nbsp;&nbsp; ${c.name}</div>
+                    <div class="news-ticker">${c.name} &nbsp;&nbsp; • &nbsp;&nbsp; ${c.name} &nbsp;&nbsp; • &nbsp;&nbsp; ${c.name}</div>
                     <div class="start-gift">${c.giftIcon}</div>
                     <div class="finish-line"></div>
                     <div class="runner" style="left: calc(${c.currentPos}% + 45px)" id="runner-${c.id}">
@@ -149,8 +158,18 @@
         function updatePodium(id, country) {
             const el = document.getElementById(id);
             if (!el) return;
-            el.querySelector('.podium-flag').innerText = country.flag;
-            el.querySelector('.podium-laps').innerText = `Laps: ${country.laps}`;
+            
+            const flagEl = el.querySelector('.podium-flag');
+            const lapsEl = el.querySelector('.podium-laps');
+
+            // If country exists and has score, show data. Else show placeholder.
+            if (country && country.score > 0) {
+                flagEl.innerText = country.flag;
+                lapsEl.innerText = `Laps: ${country.laps}`;
+            } else {
+                flagEl.innerText = "🏆";
+                lapsEl.innerText = "---";
+            }
         }
     </script>
 </body>
