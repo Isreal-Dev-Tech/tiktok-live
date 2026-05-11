@@ -26,11 +26,9 @@
             transition: all 0.5s ease;
         }
         
-        /* Midnight & Cyber-Gradient Tracks */
         .lane:nth-child(odd) { background: linear-gradient(90deg, #0f0c29, #302b63, #24243e); }
         .lane:nth-child(even) { background: linear-gradient(90deg, #200122, #400000); }
 
-        /* NEWS TICKER STYLE NAME */
         .news-ticker {
             position: absolute; width: 200%; white-space: nowrap;
             font-size: 26px; font-weight: 900; font-style: italic;
@@ -45,8 +43,8 @@
             100% { transform: translateX(-50%); }
         }
 
-        /* Highlight gift amount in ticker */
-        .ticker-boost { color: #00ff88; font-size: 28px; text-shadow: 0 0 10px #00ff88; }
+        .ticker-boost { color: #00ff88; font-size: 24px; text-shadow: 0 0 10px #00ff88; }
+        .sender-name { color: #70a1ff; font-weight: bold; }
 
         .start-gift {
             position: absolute; left: 12px; font-size: 26px; 
@@ -69,7 +67,6 @@
             box-shadow: -5px 0 15px rgba(112, 161, 255, 0.4);
         }
 
-        /* Projectile */
         .gift-flying {
             position: absolute; font-size: 26px; z-index: 100;
             transition: all 0.5s ease-in; filter: drop-shadow(0 0 12px white);
@@ -87,17 +84,17 @@
         <div class="podium-item" id="p1">
             <div class="podium-rank">1ST PLACE</div>
             <div class="podium-flag">🏆</div>
-            <div class="podium-laps">---</div>
+            <div class="podium-laps">...</div>
         </div>
         <div class="podium-item" id="p2">
             <div class="podium-rank">2ND PLACE</div>
             <div class="podium-flag">🏆</div>
-            <div class="podium-laps">---</div>
+            <div class="podium-laps">...</div>
         </div>
         <div class="podium-item" id="p3">
             <div class="podium-rank">3RD PLACE</div>
             <div class="podium-flag">🏆</div>
-            <div class="podium-laps">---</div>
+            <div class="podium-laps">...</div>
         </div>
     </div>
 
@@ -111,6 +108,7 @@
         socket.on('updateRace', (data) => {
             const countries = data.allCountries || [];
             
+            // Updates Podium using winners from records.json
             updatePodium('p1', data.winner);
             updatePodium('p2', data.second);
             updatePodium('p3', data.third);
@@ -122,8 +120,9 @@
                 lane.className = 'lane';
                 lane.id = `lane-${c.id}`;
                 
-                // If this country was gifted, show the amount in the background ticker
-                const boostText = isGifting ? ` <span class="ticker-boost">+${data.lastGiftAmount}x ${c.giftIcon}</span>` : '';
+                // FIXED: Shows the Sender's name and the Gift amount in the background
+                const boostText = isGifting ? 
+                    ` <span class="sender-name">${data.senderName}</span> <span class="ticker-boost">+${data.lastGiftAmount}x ${c.giftIcon}</span>` : '';
                 
                 lane.innerHTML = `
                     <div class="news-ticker">${c.name}${boostText} &nbsp;&nbsp; • &nbsp;&nbsp; ${c.name}${boostText} &nbsp;&nbsp; • &nbsp;&nbsp; ${c.name}</div>
@@ -167,12 +166,13 @@
             const flagEl = el.querySelector('.podium-flag');
             const lapsEl = el.querySelector('.podium-laps');
 
-            if (country && country.score > 0) {
+            // Shows the flag and the finish time from the records file
+            if (country) {
                 flagEl.innerText = country.flag;
-                lapsEl.innerText = `Laps: ${country.laps}`;
+                lapsEl.innerText = country.time; 
             } else {
                 flagEl.innerText = "🏆";
-                lapsEl.innerText = "---";
+                lapsEl.innerText = "...";
             }
         }
     </script>
