@@ -10,7 +10,7 @@ const server = http.createServer(app);
 const io = new Server(server);
 
 const TIKTOOL_API_KEY = "tk_91ec88c2870958d10d58fbcfe4e73840d018705e201a96c1"; 
-const TARGET_USERNAME = "scopeoffical"; 
+const TARGET_USERNAME = ""; 
 
 app.use('/assets', express.static(path.join(__dirname, 'assets')));
 app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'index.html')));
