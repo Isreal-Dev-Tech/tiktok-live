@@ -2,6 +2,7 @@
 <html>
 <head>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TikTok Race - Professional Edition</title>
     <style>
         body { background: #050505; margin: 0; font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; overflow: hidden; color: white; }
         
@@ -100,7 +101,7 @@
 
     <div id="raceTrack" class="race-container"></div>
 
-                <script src="/socket.io/socket.io.js"></script>
+    <script src="/socket.io/socket.io.js"></script>
     <script>
         const socket = io();
         const track = document.getElementById('raceTrack');
@@ -120,6 +121,7 @@
                 lane.className = 'lane';
                 lane.id = `lane-${c.id}`;
                 
+                // FIXED: Shows the Sender's TikTok name in the background ticker
                 const boostText = isGifting ? 
                     ` <span class="sender-name">${data.senderName}</span> <span class="ticker-boost">+${data.lastGiftAmount}x ${c.giftIcon}</span>` : '';
                 
@@ -165,16 +167,16 @@
             const flagEl = el.querySelector('.podium-flag');
             const lapsEl = el.querySelector('.podium-laps');
 
-            // CRITICAL FIX: Look for .wins (the total count) instead of .time
+            // Logic: Only show the country if it actually has recorded wins
             if (leaderboardObj && leaderboardObj.wins > 0) {
                 flagEl.innerText = leaderboardObj.flag;
-                lapsEl.innerText = `${leaderboardObj.wins} Wins`; // Shows e.g. "5 Wins"
+                lapsEl.innerText = `${leaderboardObj.wins} Wins`; 
             } else {
                 flagEl.innerText = "🏆";
                 lapsEl.innerText = "...";
             }
         }
     </script>
-    
 </body>
-</html>
+            </html>
+            
