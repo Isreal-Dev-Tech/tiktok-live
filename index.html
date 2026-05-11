@@ -3,118 +3,81 @@
 <head>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
-        body { background: #000; margin: 0; font-family: 'Arial', sans-serif; overflow: hidden; color: white; }
+        body { background: #000; margin: 0; font-family: sans-serif; overflow: hidden; color: white; }
         
-        /* 1st Place Winner Box */
-        .winner-section {
-            width: 100%;
-            height: 150px;
+        /* Fixed Podium Box at the top */
+        .podium-container {
+            display: flex;
+            justify-content: space-around;
             background: #222;
-            border: 4px solid gold;
-            display: flex;
-            position: relative;
-            margin-bottom: 10px;
-            overflow: hidden;
+            padding: 10px;
+            border-bottom: 3px solid gold;
+            height: 90px;
         }
-        .winner-box {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            font-size: 60px;
-            z-index: 10;
-        }
-        .lap-counter {
-            width: 100px;
-            background: gold;
-            color: black;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            font-weight: bold;
-            border-left: 4px solid gold;
-            z-index: 10;
-        }
-        .lap-counter .n-value { font-size: 35px; }
+        .podium-item { text-align: center; width: 30%; }
+        .podium-rank { font-size: 14px; color: gold; font-weight: bold; }
+        .podium-flag { font-size: 40px; margin: 2px 0; }
+        .podium-laps { font-size: 16px; background: gold; color: #000; padding: 2px 8px; font-weight: bold; border-radius: 4px; display: inline-block; }
 
-        /* Race Tracks */
-        .race-container { width: 100%; background: #111; }
+        /* Compact Race Track for 20 people */
+        .race-container { width: 100%; height: calc(100vh - 115px); overflow-y: hidden; }
         .lane { 
-            height: 65px; 
-            border-bottom: 2px solid #333; 
+            height: 40px; 
+            border-bottom: 1px solid #222; 
             position: relative; 
             display: flex; 
             align-items: center; 
+            background: #111;
         }
-        .side-n {
-            position: absolute;
-            right: 0;
-            width: 45px;
-            height: 100%;
-            background: #333;
-            color: gold;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: bold;
-            font-size: 20px;
-            z-index: 5;
-        }
+        
         .runner { 
             position: absolute; 
-            left: 0; 
-            transition: left 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
             display: flex; 
-            flex-direction: column; 
-            align-items: center; 
-            z-index: 2;
+            align-items: center;
+            transition: left 0.8s linear; 
         }
-        .runner img { width: 60px; transform: scaleX(-1); }
-        .runner .flag-small { font-size: 24px; margin-top: -5px; font-weight: bold; }
-
-        /* GIFT HIT ANIMATION */
-        .gift-projectile {
-            position: absolute;
-            font-size: 28px;
-            z-index: 100;
-            pointer-events: none;
-            transition: all 0.5s ease-in;
-        }
-
-        /* FLOATING BUBBLES ANIMATION */
-        .bubble {
-            position: absolute;
-            bottom: -50px;
-            font-size: 30px;
-            opacity: 0.8;
-            animation: floatUp 3s linear forwards;
-            z-index: 1;
-        }
-        @keyframes floatUp {
-            0% { transform: translateY(0) translateX(0); opacity: 1; }
-            100% { transform: translateY(-200px) translateX(20px); opacity: 0; }
-        }
+        
+        /* Layout: Flag -> Man -> Gift Icon */
+        .flag-tail { font-size: 22px; order: 1; margin-right: 5px; }
+        .runner-img { width: 40px; order: 2; transform: scaleX(-1); }
+        .gift-tag { font-size: 16px; order: 3; margin-left: 5px; }
 
         .finish-line {
             position: absolute;
-            right: 45px; 
-            top: 0;
-            bottom: 0;
-            width: 8px;
-            background: repeating-linear-gradient(0deg, #fff, #fff 10px, #000 10px, #000 20px);
-            box-shadow: 0 0 10px rgba(255,255,255,0.5);
+            right: 50px;
+            top: 0; bottom: 0; width: 8px;
+            background: repeating-linear-gradient(0deg, #fff, #fff 5px, #000 5px, #000 10px);
         }
+
+        .side-n {
+            position: absolute;
+            right: 0; width: 50px; height: 100%;
+            background: #333; color: gold;
+            display: flex; align-items: center; justify-content: center;
+            font-weight: bold; font-size: 18px;
+        }
+
+        /* Speed Boost Effect */
+        .boosting { filter: drop-shadow(0 0 10px #fff) brightness(1.3); }
     </style>
 </head>
 <body>
 
-    <div id="winner-box-ui" class="winner-section">
-        <div class="winner-box" id="top-flag">🏁</div>
-        <div class="lap-counter">
-            <span>TOTAL LAPS</span>
-            <div class="n-value" id="top-n">0</div>
+    <div class="podium-container">
+        <div class="podium-item" id="p1">
+            <div class="podium-rank">1ST</div>
+            <div class="podium-flag">🏁</div>
+            <div class="podium-laps">0</div>
+        </div>
+        <div class="podium-item" id="p2">
+            <div class="podium-rank">2ND</div>
+            <div class="podium-flag">🏁</div>
+            <div class="podium-laps">0</div>
+        </div>
+        <div class="podium-item" id="p3">
+            <div class="podium-rank">3RD</div>
+            <div class="podium-flag">🏁</div>
+            <div class="podium-laps">0</div>
         </div>
     </div>
 
@@ -124,84 +87,39 @@
     <script>
         const socket = io();
         const track = document.getElementById('raceTrack');
-        const topFlag = document.getElementById('top-flag');
-        const topN = document.getElementById('top-n');
 
         socket.on('updateRace', (data) => {
             const countries = data.allCountries || [];
-            const winner = data.winner || (countries.length > 0 ? countries : null);
             
-            if (!winner || countries.length === 0) return;
+            // 1. Update the Podium Box at the top
+            if (data.winner) updatePodium('p1', data.winner);
+            if (data.second) updatePodium('p2', data.second);
+            if (data.third) updatePodium('p3', data.third);
 
-            // 1. UPDATE WINNER BOX (Removed Name)
-            topFlag.innerHTML = `
-                <div style="font-size:18px; color:gold; margin-bottom: 5px;">${winner.giftIcon} ${winner.gift}</div>
-                <div style="display:flex; align-items:center; gap: 15px;">
-                    <img src="/assets/hurray.gif" style="width:70px;">
-                    <div style="font-size:80px;">${winner.flag}</div>
-                </div>
-            `;
-            topN.innerText = winner.laps || 0;
-
-            if (data.lastGiftedId === winner.id) {
-                createBubbles(winner.giftIcon);
-            }
-
-            // 2. UPDATE RACE TRACK (Removed Name)
+            // 2. Clear and rebuild the 20 lanes
             track.innerHTML = '';
-            
-            countries.forEach((c, index) => {
+            countries.slice(0, 20).forEach((c) => {
+                const isBoosting = data.lastGiftedId === c.id;
                 let lane = document.createElement('div');
                 lane.className = 'lane';
-                let gifType = (index <= 2) ? 'fast.gif' : 'slow.gif';
-                
                 lane.innerHTML = `
                     <div class="finish-line"></div>
-                    <div class="runner" style="left: ${c.currentPos}%" id="runner-${c.id}">
-                        <img src="/assets/${gifType}">
-                        <div class="flag-small">${c.flag}</div>
+                    <div class="runner" style="left: ${c.currentPos || 0}%">
+                        <div class="flag-tail">${c.flag}</div>
+                        <img src="/assets/fast.gif" class="runner-img ${isBoosting ? 'boosting' : ''}">
+                        <div class="gift-tag">${c.giftIcon}</div>
                     </div>
-                    <div class="side-n">${c.laps}</div>
+                    <div class="side-n">${c.laps || 0}</div>
                 `;
                 track.appendChild(lane);
-
-                if (data.lastGiftedId === c.id) {
-                    triggerHit(c.id, data.lastGiftIcon || c.giftIcon);
-                }
             });
         });
 
-        function triggerHit(countryId, icon) {
-            const runner = document.getElementById(`runner-${countryId}`);
-            if (!runner) return;
-
-            const projectile = document.createElement('div');
-            projectile.className = 'gift-projectile';
-            projectile.innerText = icon;
-            projectile.style.left = "-30px";
-            projectile.style.top = "10px";
-            
-            runner.parentElement.appendChild(projectile);
-
-            setTimeout(() => {
-                projectile.style.left = runner.style.left;
-                runner.style.transform = "scale(1.3)";
-                setTimeout(() => { 
-                    runner.style.transform = "scale(1)"; 
-                    projectile.remove();
-                }, 300);
-            }, 50);
-        }
-
-        function createBubbles(icon) {
-            for(let i=0; i<6; i++) {
-                const b = document.createElement('div');
-                b.className = 'bubble';
-                b.innerText = icon;
-                b.style.left = Math.random() * 70 + 15 + "%";
-                document.getElementById('winner-box-ui').appendChild(b);
-                setTimeout(() => b.remove(), 3000);
-            }
+        function updatePodium(id, country) {
+            const el = document.getElementById(id);
+            if (!el || !country) return;
+            el.querySelector('.podium-flag').innerText = country.flag;
+            el.querySelector('.podium-laps').innerText = country.laps;
         }
     </script>
 </body>
