@@ -110,6 +110,7 @@
             const countries = data.allCountries || [];
             
             // Updates Podium using leaders sent from server.js
+            // These objects now contain the .wins property
             updatePodium('p1', data.winner);
             updatePodium('p2', data.second);
             updatePodium('p3', data.third);
@@ -121,7 +122,7 @@
                 lane.className = 'lane';
                 lane.id = `lane-${c.id}`;
                 
-                // FIXED: Shows the Sender's TikTok name in the background ticker
+                // Uses data.senderName from the server logic
                 const boostText = isGifting ? 
                     ` <span class="sender-name">${data.senderName}</span> <span class="ticker-boost">+${data.lastGiftAmount}x ${c.giftIcon}</span>` : '';
                 
@@ -167,7 +168,7 @@
             const flagEl = el.querySelector('.podium-flag');
             const lapsEl = el.querySelector('.podium-laps');
 
-            // Logic: Only show the country if it actually has recorded wins
+            // Correctly displays the total wins for the rank
             if (leaderboardObj && leaderboardObj.wins > 0) {
                 flagEl.innerText = leaderboardObj.flag;
                 lapsEl.innerText = `${leaderboardObj.wins} Wins`; 
@@ -178,5 +179,4 @@
         }
     </script>
 </body>
-            </html>
-            
+</html>
