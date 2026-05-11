@@ -3,82 +3,88 @@
 <head>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
-        body { background: #000; margin: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; overflow: hidden; color: white; }
+        body { background: #050505; margin: 0; font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; overflow: hidden; color: white; }
         
-        /* Top Leaderboard Podium */
+        /* Premium Broadcasting Header */
         .podium-container {
             display: flex; justify-content: space-around;
-            background: #111; padding: 10px; border-bottom: 4px solid #2ecc71; height: 90px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+            background: linear-gradient(180deg, #1a1a2e 0%, #16213e 100%);
+            padding: 10px; border-bottom: 2px solid #4834d4; height: 95px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.8);
         }
-        .podium-item { text-align: center; width: 30%; }
-        .podium-rank { font-size: 12px; font-weight: bold; margin-bottom: 2px; }
-        .podium-flag { font-size: 38px; margin-bottom: 5px; }
-        .podium-laps { font-size: 14px; background: #2ecc71; color: #000; padding: 2px 10px; font-weight: bold; border-radius: 20px; display: inline-block; }
+        .podium-item { text-align: center; width: 30%; position: relative; }
+        .podium-rank { font-size: 11px; letter-spacing: 2px; font-weight: bold; color: #70a1ff; margin-bottom: 2px; text-transform: uppercase; }
+        .podium-flag { font-size: 38px; filter: drop-shadow(0 0 8px rgba(255,255,255,0.3)); }
+        .podium-laps { font-size: 14px; background: #4834d4; color: #fff; padding: 2px 12px; font-weight: bold; border-radius: 50px; display: inline-block; box-shadow: 0 0 10px #4834d4; }
 
-        /* Race Track Styling */
+        /* Neon Racing Tracks */
         .race-container { width: 100%; height: calc(100vh - 115px); overflow: hidden; }
         .lane { 
-            height: 45px; 
-            position: relative; 
-            display: flex; 
-            align-items: center; 
-            border-bottom: 1px solid rgba(255,255,255,0.05);
-            transition: all 0.5s ease; /* Smooth lane swapping */
+            height: 52px; position: relative; display: flex; align-items: center; 
+            border-bottom: 1px solid rgba(72, 52, 212, 0.2);
+            overflow: hidden;
+            transition: all 0.5s ease;
         }
         
-        /* Alternating Green Turf */
-        .lane:nth-child(odd) { background: #27ae60; }
-        .lane:nth-child(even) { background: #2ecc71; }
+        /* Midnight & Cyber-Gradient Tracks */
+        .lane:nth-child(odd) { background: linear-gradient(90deg, #0f0c29, #302b63, #24243e); }
+        .lane:nth-child(even) { background: linear-gradient(90deg, #200122, #400000); }
 
-        /* Fixed Starting Gift */
+        /* NEWS TICKER STYLE NAME (Background Crawl) */
+        .news-ticker {
+            position: absolute; width: 200%; white-space: nowrap;
+            font-size: 26px; font-weight: 900; font-style: italic;
+            color: rgba(255, 255, 255, 0.05); /* Faded TV Background look */
+            text-transform: uppercase;
+            animation: tickerMove 12s linear infinite;
+            z-index: 1; pointer-events: none;
+            user-select: none;
+        }
+        @keyframes tickerMove {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(-50%); }
+        }
+
         .start-gift {
-            position: absolute; left: 10px; font-size: 20px; 
-            z-index: 10; opacity: 0.8;
-            filter: drop-shadow(0 0 5px rgba(0,0,0,0.5));
+            position: absolute; left: 12px; font-size: 26px; 
+            z-index: 10; filter: drop-shadow(0 0 8px gold);
         }
 
         .runner { 
-            position: absolute; 
-            display: flex; 
-            flex-direction: column;
-            align-items: center;
-            transition: left 0.8s cubic-bezier(0.25, 0.1, 0.25, 1);
+            position: absolute; display: flex; align-items: center;
+            transition: left 0.8s cubic-bezier(0.15, 0.88, 0.3, 1);
             z-index: 5;
         }
         
-        .runner-content { display: flex; align-items: center; }
-        .flag-tail { font-size: 20px; margin-right: 5px; }
-        .runner-img { width: 45px; transform: scaleX(-1); }
-        
-        /* Country Name Overlay under the runner */
-        .country-name {
-            font-size: 10px; font-weight: bold; text-transform: uppercase;
-            background: rgba(0,0,0,0.6); padding: 1px 6px; border-radius: 4px;
-            margin-top: -5px; white-space: nowrap;
-        }
+        .flag-tail { font-size: 26px; margin-right: 8px; filter: drop-shadow(2px 2px 4px black); }
+        .runner-img { width: 50px; transform: scaleX(-1); }
 
         .finish-line {
-            position: absolute; right: 0; top: 0; bottom: 0; width: 15px;
-            background: repeating-linear-gradient(0deg, #fff, #fff 5px, #000 5px, #000 10px);
-            box-shadow: -2px 0 5px rgba(0,0,0,0.3);
+            position: absolute; right: 0; top: 0; bottom: 0; width: 20px;
+            background: repeating-linear-gradient(45deg, #fff, #fff 10px, #000 10px, #000 20px);
+            border-left: 2px solid #70a1ff;
+            box-shadow: -5px 0 15px rgba(112, 161, 255, 0.4);
         }
 
-        /* Projectile Gift Animation */
+        /* Projectile */
         .gift-flying {
-            position: absolute; font-size: 22px; z-index: 100;
-            transition: all 0.5s ease-in; pointer-events: none;
+            position: absolute; font-size: 26px; z-index: 100;
+            transition: all 0.5s ease-in; filter: drop-shadow(0 0 12px white);
         }
 
-        .boosting { filter: brightness(1.5) drop-shadow(0 0 10px white); transform: scale(1.2) scaleX(-1) !important; }
+        /* Power-up Glow when gifting */
+        .boosting { 
+            filter: brightness(1.8) drop-shadow(0 0 15px #70a1ff) !important; 
+            transform: scale(1.2) scaleX(-1) !important; 
+        }
     </style>
 </head>
 <body>
 
     <div class="podium-container">
-        <div class="podium-item" id="p1"><div class="podium-rank" style="color:gold">1ST PLACE</div><div class="podium-flag">🏁</div><div class="podium-laps">0</div></div>
-        <div class="podium-item" id="p2"><div class="podium-rank" style="color:#eee">2ND PLACE</div><div class="podium-flag">🏁</div><div class="podium-laps">0</div></div>
-        <div class="podium-item" id="p3"><div class="podium-rank" style="color:#cd7f32">3RD PLACE</div><div class="podium-flag">🏁</div><div class="podium-laps">0</div></div>
+        <div class="podium-item" id="p1"><div class="podium-rank">Top Leader</div><div class="podium-flag">🏁</div><div class="podium-laps">0</div></div>
+        <div class="podium-item" id="p2"><div class="podium-rank">Challenger</div><div class="podium-flag">🏁</div><div class="podium-laps">0</div></div>
+        <div class="podium-item" id="p3"><div class="podium-rank">Contender</div><div class="podium-flag">🏁</div><div class="podium-laps">0</div></div>
     </div>
 
     <div id="raceTrack" class="race-container"></div>
@@ -91,12 +97,12 @@
         socket.on('updateRace', (data) => {
             const countries = data.allCountries || [];
             
-            // 1. Update Podium
+            // Update Top 3 Podium
             if (data.winner) updatePodium('p1', data.winner);
             if (data.second) updatePodium('p2', data.second);
             if (data.third) updatePodium('p3', data.third);
 
-            // 2. Build Tracks (Auto-sorts by rank)
+            // Re-render Top 20 Lanes
             track.innerHTML = '';
             countries.slice(0, 20).forEach((c) => {
                 const isGifting = data.lastGiftedId === c.id;
@@ -104,20 +110,18 @@
                 lane.className = 'lane';
                 lane.id = `lane-${c.id}`;
                 
+                // The ticker displays the country name multiple times for the crawl effect
                 lane.innerHTML = `
+                    <div class="news-ticker">${c.name} &nbsp;&nbsp; • &nbsp;&nbsp; ${c.name} &nbsp;&nbsp; • &nbsp;&nbsp; ${c.name} &nbsp;&nbsp; • &nbsp;&nbsp; ${c.name}</div>
                     <div class="start-gift">${c.giftIcon}</div>
                     <div class="finish-line"></div>
-                    <div class="runner" style="left: calc(${c.currentPos}% + 40px)" id="runner-${c.id}">
-                        <div class="runner-content">
-                            <div class="flag-tail">${c.flag}</div>
-                            <img src="/assets/fast.gif" class="runner-img ${isGifting ? 'boosting' : ''}">
-                        </div>
-                        <div class="country-name">${c.name}</div>
+                    <div class="runner" style="left: calc(${c.currentPos}% + 45px)" id="runner-${c.id}">
+                        <div class="flag-tail">${c.flag}</div>
+                        <img src="/assets/fast.gif" class="runner-img ${isGifting ? 'boosting' : ''}">
                     </div>
                 `;
                 track.appendChild(lane);
 
-                // If this country was just gifted, fly the gift!
                 if (isGifting) {
                     flyGift(c.id, c.giftIcon);
                 }
@@ -132,16 +136,13 @@
             const projectile = document.createElement('div');
             projectile.className = 'gift-flying';
             projectile.innerText = icon;
-            projectile.style.left = "15px"; 
-            projectile.style.top = "10px";
+            projectile.style.left = "20px"; 
+            projectile.style.top = "12px";
             lane.appendChild(projectile);
 
-            // Animate to runner position
             setTimeout(() => {
                 projectile.style.left = runner.style.left;
-                setTimeout(() => {
-                    projectile.remove(); // Remove on impact
-                }, 500);
+                setTimeout(() => { projectile.remove(); }, 500);
             }, 50);
         }
 
