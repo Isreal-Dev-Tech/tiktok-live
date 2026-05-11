@@ -13,37 +13,15 @@ const io = new Server(server);
 // SETTINGS
 // ===============================
 const TIKTOOL_API_KEY = "tk_91ec88c2870958d10d58fbcfe4e73840d018705e201a96c1";
-const TARGET_USERNAME = ""; // Ensure this is correct
+const TARGET_USERNAME = ""; // Enter username here
 const POINTS_PER_LAP = 50;
-const recordsPath = path.join(__dirname, 'records.json');
 const configPath = path.join(__dirname, 'config.json');
 
 app.use('/assets', express.static(path.join(__dirname, 'assets')));
 app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'index.html')));
 
 // ===============================
-// 1. DIAGNOSTIC FILE CHECK
-// ===============================
-function ensureRecordsFile() {
-    try {
-        if (!fs.existsSync(recordsPath)) {
-            console.log("📁 Creating missing records.json...");
-            fs.writeFileSync(recordsPath, JSON.stringify({ winners: [] }, null, 2));
-        }
-        let raw = fs.readFileSync(recordsPath, 'utf8');
-        let data = JSON.parse(raw || '{"winners":[]}');
-        if (!data.winners) data.winners = [];
-        return data;
-    } catch (err) {
-        console.error("❌ CRITICAL ERROR: records.json is corrupted!", err.message);
-        const fresh = { winners: [] };
-        fs.writeFileSync(recordsPath, JSON.stringify(fresh, null, 2));
-        return fresh;
-    }
-}
-
-// ===============================
-// 2. LOAD CONFIG
+// 1. LOAD CONFIG
 // ===============================
 let countriesList = [];
 try {
@@ -56,44 +34,14 @@ try {
     }));
     console.log(`✅ Config Loaded: ${countriesList.length} countries ready.`);
 } catch (err) {
-    console.error("❌ STARTUP ERROR: Failed to load config.json!", err.message);
+    console.error("❌ STARTUP ERROR:", err.message);
     process.exit(1);
 }
 
 let giftComboTracker = {};
 
 // ===============================
-// 3. LEADERBOARD LOGIC
-// ===============================
-function getLeaderboard() {
-    try {
-        const data = ensureRecordsFile();
-        const winCounts = {};
-
-        data.winners.forEach((w) => {
-            if (!winCounts[w.name]) {
-                winCounts[w.name] = {
-                    name: w.name, flag: w.flag, wins: 0,
-                    lastWinTime: w.timestamp || Date.now()
-                };
-            }
-            winCounts[w.name].wins += 1;
-            // Update timestamp so if wins are tied, the one who won most recently is higher
-            winCounts[w.name].lastWinTime = w.timestamp; 
-        });
-
-        return Object.values(winCounts).sort((a, b) => {
-            if (b.wins !== a.wins) return b.wins - a.wins;
-            return b.lastWinTime - a.lastWinTime; // Tie-breaker: most recent win
-        });
-    } catch (err) {
-        console.error("❌ LEADERBOARD ERROR:", err.message);
-        return [];
-    }
-}
-
-// ===============================
-// 4. TIKTOK LIVE CONNECTION
+// 2. TIKTOK LIVE CONNECTION
 // ===============================
 const tiktok = new TikTokLive({
     uniqueId: TARGET_USERNAME,
@@ -124,35 +72,20 @@ tiktok.on('gift', (data) => {
 
         if (!country) return;
 
-        // Loop through each gift to check for Lap Completions
-        for (let i = 0; i < countToProcess; i++) {
-            const oldLaps = Math.floor(country.score / POINTS_PER_LAP);
-            country.score += 1;
-            const newLaps = Math.floor(country.score / POINTS_PER_LAP);
-
-            if (newLaps > oldLaps) {
-                const records = ensureRecordsFile();
-                records.winners.push({ 
-                    name: country.name, 
-                    flag: country.flag, 
-                    timestamp: Date.now() 
-                });
-                fs.writeFileSync(recordsPath, JSON.stringify(records, null, 2));
-                console.log(`🏆 [WIN] ${country.name} finished a lap! Total Wins: ${newLaps}`);
-            }
-        }
-
-        country.currentPos = ((country.score % POINTS_PER_LAP) / POINTS_PER_LAP) * 80;
+        // Process movement
+        country.score += countToProcess;
         
-        // Update Leaderboard Data
-        const sortedLeaders = getLeaderboard();
+        // Reset lap internally if they pass the points limit (optional movement logic)
+        country.currentPos = ((country.score % POINTS_PER_LAP) / POINTS_PER_LAP) * 80;
 
-        // EMIT UPDATED RANKINGS
+        console.log(`🎁 [GIFT] ${senderName} -> ${countToProcess}x ${data.giftName} (${country.name})`);
+
+        // Sort only for the lane positions (1 to 20)
+        const sortedRace = [...countriesList].sort((a, b) => b.score - a.score);
+
+        // EMIT ONLY THE RACE DATA
         io.emit('updateRace', {
-            allCountries: countriesList.sort((a, b) => b.score - a.score),
-            winner: sortedLeaders || { flag: "🏆", wins: 0 }, // 1st Place
-            second: sortedLeaders || { flag: "🏆", wins: 0 }, // 2nd Place
-            third: sortedLeaders || { flag: "🏆", wins: 0 },  // 3rd Place
+            allCountries: sortedRace,
             lastGiftedId: country.id,
             lastGiftAmount: countToProcess,
             senderName: senderName
@@ -170,16 +103,11 @@ tiktok.on('error', (err) => console.error("❌ TIKTOK ERROR:", err));
 try { tiktok.connect(); } catch (err) {}
 
 io.on('connection', (socket) => {
-    const leaders = getLeaderboard();
     socket.emit('updateRace', {
-        allCountries: countriesList,
-        winner: leaders || null,
-        second: leaders || null,
-        third: leaders || null
+        allCountries: countriesList.sort((a, b) => b.score - a.score)
     });
 });
 
 server.listen(3000, () => {
     console.log("🚀 SERVER RUNNING AT http://localhost:3000");
 });
-    
