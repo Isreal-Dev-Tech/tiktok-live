@@ -10,7 +10,7 @@ const server = http.createServer(app);
 const io = new Server(server);
 
 const TIKTOOL_API_KEY = "tk_91ec88c2870958d10d58fbcfe4e73840d018705e201a96c1"; 
-const TARGET_USERNAME = ""; 
+const TARGET_USERNAME = ""; // Put your username here
 
 app.use('/assets', express.static(path.join(__dirname, 'assets')));
 app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'index.html')));
@@ -27,17 +27,15 @@ let rawConfig = JSON.parse(fs.readFileSync('./config.json'));
 let countriesList = rawConfig.countries.map(c => ({
     ...c,
     score: c.score || 0,
-    laps: 0,
     currentPos: 0
 }));
 
-// NEW FUNCTION: This calculates the true Top 3 based on TOTAL WINS in the file
+// FUNCTION: Calculate true Top 3 based on TOTAL WINS in records.json
 function getLeaderboard() {
     try {
         const data = JSON.parse(fs.readFileSync(recordsPath));
         const winCounts = {};
 
-        // Loop through every win ever recorded
         data.winners.forEach(w => {
             if (!winCounts[w.name]) {
                 winCounts[w.name] = { name: w.name, flag: w.flag, wins: 0 };
@@ -45,8 +43,8 @@ function getLeaderboard() {
             winCounts[w.name].wins += 1;
         });
 
-        // Sort by most wins and take top 3
-        return Object.values(winCounts).sort((a, b) => b.wins - a.wins).slice(0, 3);
+        // Sort by wins and return sorted array
+        return Object.values(winCounts).sort((a, b) => b.wins - a.wins);
     } catch (e) {
         return [];
     }
@@ -56,10 +54,7 @@ const tiktok = new TikTokLive({
     uniqueId: TARGET_USERNAME,
     apiKey: TIKTOOL_API_KEY,
     autoReconnect: true,
-    signServerUrl: "https://api.tik.tools",
-    clientParams: {
-        "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
-    }
+    signServerUrl: "https://api.tik.tools"
 });
 
 tiktok.on('gift', (data) => {
@@ -76,35 +71,39 @@ tiktok.on('gift', (data) => {
 
     if (countToProcess <= 0) return;
 
-    const senderName = data.uniqueId || data.nickname || "User";
+    // FIX: Comprehensive check for User uniqueId (Normal vs Nested)
+    const senderName = data.uniqueId || (data.user && data.user.uniqueId) || data.nickname || "Gifter";
 
     let country = countriesList.find(c => 
         c.gift.toLowerCase() === data.giftName.toLowerCase()
     );
     
     if (country) {
+        // ADDED: Console log for gifts
+        console.log(`🎁 [GIFT] ${senderName} sent ${countToProcess}x ${data.giftName} for ${country.name}`);
+
         let oldLaps = Math.floor(country.score / POINTS_PER_LAP);
         country.score += countToProcess;
         let newLaps = Math.floor(country.score / POINTS_PER_LAP);
         
-        // RECORD THE WIN WHEN THEY CROSS THE LINE
+        // RECORD WIN
         if (newLaps > oldLaps) {
             let records = JSON.parse(fs.readFileSync(recordsPath));
             records.winners.push({
                 name: country.name,
                 flag: country.flag,
-                time: new Date().toLocaleTimeString()
+                timestamp: Date.now()
             });
             fs.writeFileSync(recordsPath, JSON.stringify(records, null, 2));
-            console.log(`🏆 ${country.name} FINISHED A LAP!`);
+            console.log(`🏆 WINNER: ${country.name} reached the finish line!`);
         }
 
         country.currentPos = ((country.score % POINTS_PER_LAP) / POINTS_PER_LAP) * 80; 
 
-        // SORT LANES BY SCORE (Morocco moves up)
+        // Sort race lanes
         countriesList.sort((a, b) => b.score - a.score);
 
-        // GET FRESH TOP 3
+        // Get Top 3 Leaders
         const leaders = getLeaderboard();
 
         io.emit('updateRace', {
