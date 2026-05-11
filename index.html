@@ -365,11 +365,24 @@
 
                     <div class="finish-line"></div>
 
-                    <div
-                    class="runner"
-                    id="runner-${c.id}"
-                    style="left: calc(${c.currentPos}% + 45px)">
+<!-- LIVE SCORE -->
+<div style="
+    position:absolute;
+    right:35px;
+    top:12px;
+    z-index:20;
+    font-weight:bold;
+    font-size:18px;
+    color:#00ff88;
+    text-shadow:0 0 10px #00ff88;
+">
+    ${c.score}
+</div>
 
+<div
+class="runner"
+id="runner-${c.id}"
+style="left: calc(${c.currentPos}% + 45px)">
                         <div class="flag-tail">
                             ${c.flag}
                         </div>
