@@ -10,13 +10,12 @@ const server = http.createServer(app);
 const io = new Server(server);
 
 const TIKTOOL_API_KEY = "tk_91ec88c2870958d10d58fbcfe4e73840d018705e201a96c1"; 
-const TARGET_USERNAME = "jimsbel"; 
+const TARGET_USERNAME = "q24gzn4"; 
 
 app.use('/assets', express.static(path.join(__dirname, 'assets')));
 app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'index.html')));
 
-// Configuration for the race
-const POINTS_PER_LAP = 150; // Upgraded to 150 points
+const POINTS_PER_LAP = 150; 
 
 let giftComboTracker = {};
 let rawConfig = JSON.parse(fs.readFileSync('./config.json'));
@@ -24,7 +23,7 @@ let countriesList = rawConfig.countries.map(c => ({
     ...c,
     score: c.score || 0,
     laps: Math.floor((c.score || 0) / POINTS_PER_LAP),
-    currentPos: (c.score || 0) % POINTS_PER_LAP
+    currentPos: 0
 }));
 
 const tiktok = new TikTokLive({
@@ -38,49 +37,50 @@ const tiktok = new TikTokLive({
 });
 
 tiktok.on('gift', (data) => {
+    // Determine the actual amount sent (especially for combos)
     const trackingId = `${data.userId}_${data.giftName}`;
-    let newGiftsCount = 0;
+    let countToProcess = 0;
 
     if (data.repeatEnd) {
-        newGiftsCount = data.repeatCount - (giftComboTracker[trackingId] || 0);
+        countToProcess = data.repeatCount - (giftComboTracker[trackingId] || 0);
         delete giftComboTracker[trackingId];
     } else {
-        newGiftsCount = data.repeatCount - (giftComboTracker[trackingId] || 0);
+        countToProcess = data.repeatCount - (giftComboTracker[trackingId] || 0);
         giftComboTracker[trackingId] = data.repeatCount;
     }
 
-    if (newGiftsCount <= 0) return;
+    if (countToProcess <= 0) return;
 
     let country = countriesList.find(c => 
         c.gift.toLowerCase() === data.giftName.toLowerCase()
     );
     
     if (country) {
-        // Console log for tracking gifts in terminal
-        console.log(`🎁 ${data.nickname} sent ${newGiftsCount}x ${data.giftName} for ${country.name}`);
+        // FIXED CONSOLE LOG: Shows username, gift, amount, and the country receiving it
+        console.log(`🎁 [GIFT RECEIVED] ${data.uniqueId} sent ${data.giftName} x${countToProcess} for ${country.name}`);
 
-        country.score += newGiftsCount;
+        country.score += countToProcess;
         country.laps = Math.floor(country.score / POINTS_PER_LAP);
         
-        // Calculate position based on 150 points
-        country.currentPos = ((country.score % POINTS_PER_LAP) / POINTS_PER_LAP) * 85; 
+        // desktop-safe 80% max width to ensure they don't hit the edge too hard
+        country.currentPos = ((country.score % POINTS_PER_LAP) / POINTS_PER_LAP) * 80; 
 
         countriesList.sort((a, b) => b.score - a.score);
 
-        // Sending specific objects instead of the whole list to fix "undefined"
         io.emit('updateRace', {
             allCountries: countriesList,
-            winner: countriesList || null,
+            winner: countriesList || null, // Only send the object, not the list
             second: countriesList || null,
             third: countriesList || null,
             lastGiftedId: country.id,
-            lastGiftIcon: country.giftIcon
+            lastGiftIcon: country.giftIcon,
+            lastGiftAmount: countToProcess // Send the x20/x1 to HTML
         });
     }
 });
 
-tiktok.on('connected', () => console.log(`✅ Connected to Live: ${TARGET_USERNAME}`));
-tiktok.on('error', (err) => console.error('❌ TikTok Error:', err));
+tiktok.on('connected', () => console.log(`✅ LIVE CONNECTED: ${TARGET_USERNAME}`));
+tiktok.on('error', (err) => console.error('❌ TIKTOK ERROR:', err));
 
 tiktok.connect();
 
@@ -93,4 +93,4 @@ io.on('connection', (socket) => {
     });
 });
 
-server.listen(3000, () => console.log(`🚀 Server running on http://localhost:3000`));
+server.listen(3000, () => console.log(`🚀 Wide Race Server: http://localhost:3000`));
