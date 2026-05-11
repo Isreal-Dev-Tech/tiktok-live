@@ -10,7 +10,7 @@ const server = http.createServer(app);
 const io = new Server(server);
 
 const TIKTOOL_API_KEY = "tk_91ec88c2870958d10d58fbcfe4e73840d018705e201a96c1"; 
-const TARGET_USERNAME = ""; 
+const TARGET_USERNAME = "jimsbel"; // Put your username here
 
 app.use('/assets', express.static(path.join(__dirname, 'assets')));
 app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'index.html')));
@@ -21,8 +21,7 @@ let countriesList = rawConfig.countries.map(c => ({
     ...c,
     score: c.score || 0,
     laps: Math.floor((c.score || 0) / 100),
-    currentPos: (c.score || 0) % 100,
-    isBoosting: false
+    currentPos: (c.score || 0) % 100
 }));
 
 const tiktok = new TikTokLive({
@@ -56,10 +55,9 @@ tiktok.on('gift', (data) => {
     if (country) {
         country.score += newGiftsCount;
         country.laps = Math.floor(country.score / 100);
-        // currentPos set to 85% max so they don't disappear behind the lap counter
         country.currentPos = (country.score % 100) * 0.85; 
-        country.isBoosting = true;
 
+        // Re-sort based on score
         countriesList.sort((a, b) => b.score - a.score);
 
         io.emit('updateRace', {
@@ -70,15 +68,10 @@ tiktok.on('gift', (data) => {
             lastGiftedId: country.id,
             lastGiftIcon: country.giftIcon
         });
-
-        // Reset boost after 1.5 seconds so they slow down
-        setTimeout(() => { country.isBoosting = false; }, 1500);
     }
 });
 
-tiktok.on('connected', () => console.log(`✅ Live Connected: ${TARGET_USERNAME}`));
 tiktok.connect();
-
 io.on('connection', (socket) => {
     socket.emit('updateRace', {
         allCountries: countriesList,
@@ -88,4 +81,4 @@ io.on('connection', (socket) => {
     });
 });
 
-server.listen(3000, () => console.log(`🚀 Wide Race Server: http://localhost:3000`));
+server.listen(3000, () => console.log(`🚀 Server on port 3000`));
