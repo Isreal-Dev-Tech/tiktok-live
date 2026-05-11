@@ -10,7 +10,7 @@ const server = http.createServer(app);
 const io = new Server(server);
 
 const TIKTOOL_API_KEY = "tk_91ec88c2870958d10d58fbcfe4e73840d018705e201a96c1"; 
-const TARGET_USERNAME = "q24gzn4"; 
+const TARGET_USERNAME = "scopeoffical"; 
 
 app.use('/assets', express.static(path.join(__dirname, 'assets')));
 app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'index.html')));
@@ -30,6 +30,27 @@ let countriesList = rawConfig.countries.map(c => ({
     laps: 0,
     currentPos: 0
 }));
+
+// NEW FUNCTION: This calculates the true Top 3 based on TOTAL WINS in the file
+function getLeaderboard() {
+    try {
+        const data = JSON.parse(fs.readFileSync(recordsPath));
+        const winCounts = {};
+
+        // Loop through every win ever recorded
+        data.winners.forEach(w => {
+            if (!winCounts[w.name]) {
+                winCounts[w.name] = { name: w.name, flag: w.flag, wins: 0 };
+            }
+            winCounts[w.name].wins += 1;
+        });
+
+        // Sort by most wins and take top 3
+        return Object.values(winCounts).sort((a, b) => b.wins - a.wins).slice(0, 3);
+    } catch (e) {
+        return [];
+    }
+}
 
 const tiktok = new TikTokLive({
     uniqueId: TARGET_USERNAME,
@@ -55,7 +76,6 @@ tiktok.on('gift', (data) => {
 
     if (countToProcess <= 0) return;
 
-    // FIX: Get the actual TikTok Username (uniqueId)
     const senderName = data.uniqueId || data.nickname || "User";
 
     let country = countriesList.find(c => 
@@ -63,37 +83,35 @@ tiktok.on('gift', (data) => {
     );
     
     if (country) {
-        console.log(`🎁 [GIFT] ${senderName} sent ${data.giftName} x${countToProcess} for ${country.name}`);
-
         let oldLaps = Math.floor(country.score / POINTS_PER_LAP);
         country.score += countToProcess;
         let newLaps = Math.floor(country.score / POINTS_PER_LAP);
         
-        // SAVE WINS TO FILE
+        // RECORD THE WIN WHEN THEY CROSS THE LINE
         if (newLaps > oldLaps) {
             let records = JSON.parse(fs.readFileSync(recordsPath));
-            records.winners.unshift({
+            records.winners.push({
                 name: country.name,
                 flag: country.flag,
-                time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+                time: new Date().toLocaleTimeString()
             });
-            records.winners = records.winners.slice(0, 10);
             fs.writeFileSync(recordsPath, JSON.stringify(records, null, 2));
+            console.log(`🏆 ${country.name} FINISHED A LAP!`);
         }
 
         country.currentPos = ((country.score % POINTS_PER_LAP) / POINTS_PER_LAP) * 80; 
 
-        // CRITICAL FIX: SORT BY SCORE SO MOROCCO MOVES TO THE TOP
+        // SORT LANES BY SCORE (Morocco moves up)
         countriesList.sort((a, b) => b.score - a.score);
 
-        let recordsData = JSON.parse(fs.readFileSync(recordsPath));
+        // GET FRESH TOP 3
+        const leaders = getLeaderboard();
 
         io.emit('updateRace', {
             allCountries: countriesList,
-            // CRITICAL FIX: Send specific items,, NOT the whole winners list
-            winner: recordsData.winners || null, 
-            second: recordsData.winners || null, 
-            third: recordsData.winners || null,  
+            winner: leaders || null, 
+            second: leaders || null, 
+            third: leaders || null,  
             lastGiftedId: country.id,
             lastGiftAmount: countToProcess,
             senderName: senderName 
@@ -105,12 +123,12 @@ tiktok.on('connected', () => console.log(`✅ Connected to: ${TARGET_USERNAME}`)
 tiktok.connect();
 
 io.on('connection', (socket) => {
-    let recordsData = JSON.parse(fs.readFileSync(recordsPath));
+    const leaders = getLeaderboard();
     socket.emit('updateRace', {
         allCountries: countriesList,
-        winner: recordsData.winners || null,
-        second: recordsData.winners || null,
-        third: recordsData.winners || null
+        winner: leaders || null,
+        second: leaders || null,
+        third: leaders || null
     });
 });
 
