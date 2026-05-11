@@ -15,10 +15,9 @@ const TARGET_USERNAME = "q24gzn4";
 app.use('/assets', express.static(path.join(__dirname, 'assets')));
 app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'index.html')));
 
-const POINTS_PER_LAP = 150; // Set to 150 points as discussed
+const POINTS_PER_LAP = 150; 
 const recordsPath = path.join(__dirname, 'records.json');
 
-// Initialize records.json if it doesn't exist
 if (!fs.existsSync(recordsPath)) {
     fs.writeFileSync(recordsPath, JSON.stringify({ winners: [] }, null, 2));
 }
@@ -56,7 +55,7 @@ tiktok.on('gift', (data) => {
 
     if (countToProcess <= 0) return;
 
-    // FIX FOR UNDEFINED: Use data.uniqueId or data.nickname
+    // FIX: Get the actual TikTok Username (uniqueId)
     const senderName = data.uniqueId || data.nickname || "User";
 
     let country = countriesList.find(c => 
@@ -70,33 +69,34 @@ tiktok.on('gift', (data) => {
         country.score += countToProcess;
         let newLaps = Math.floor(country.score / POINTS_PER_LAP);
         
-        // CHECK IF FINISHED A LAP
+        // SAVE WINS TO FILE
         if (newLaps > oldLaps) {
             let records = JSON.parse(fs.readFileSync(recordsPath));
-            // Add this win to the top of the history
             records.winners.unshift({
                 name: country.name,
                 flag: country.flag,
                 time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })
             });
-            // Keep only the last 10 winners in the file
             records.winners = records.winners.slice(0, 10);
             fs.writeFileSync(recordsPath, JSON.stringify(records, null, 2));
         }
 
         country.currentPos = ((country.score % POINTS_PER_LAP) / POINTS_PER_LAP) * 80; 
 
-        // Load winners for the podium
+        // CRITICAL FIX: SORT BY SCORE SO MOROCCO MOVES TO THE TOP
+        countriesList.sort((a, b) => b.score - a.score);
+
         let recordsData = JSON.parse(fs.readFileSync(recordsPath));
 
         io.emit('updateRace', {
             allCountries: countriesList,
-            winner: recordsData.winners || null, // 1st Place from file
-            second: recordsData.winners || null, // 2nd Place from file
-            third: recordsData.winners || null,  // 3rd Place from file
+            // CRITICAL FIX: Send specific items,, NOT the whole winners list
+            winner: recordsData.winners || null, 
+            second: recordsData.winners || null, 
+            third: recordsData.winners || null,  
             lastGiftedId: country.id,
             lastGiftAmount: countToProcess,
-            senderName: senderName // Sending username to HTML
+            senderName: senderName 
         });
     }
 });
