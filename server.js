@@ -10,18 +10,21 @@ const server = http.createServer(app);
 const io = new Server(server);
 
 const TIKTOOL_API_KEY = "tk_91ec88c2870958d10d58fbcfe4e73840d018705e201a96c1"; 
-const TARGET_USERNAME = "jimsbel"; // Put your username here
+const TARGET_USERNAME = "jimsbel"; 
 
 app.use('/assets', express.static(path.join(__dirname, 'assets')));
 app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'index.html')));
+
+// Configuration for the race
+const POINTS_PER_LAP = 150; // Upgraded to 150 points
 
 let giftComboTracker = {};
 let rawConfig = JSON.parse(fs.readFileSync('./config.json'));
 let countriesList = rawConfig.countries.map(c => ({
     ...c,
     score: c.score || 0,
-    laps: Math.floor((c.score || 0) / 100),
-    currentPos: (c.score || 0) % 100
+    laps: Math.floor((c.score || 0) / POINTS_PER_LAP),
+    currentPos: (c.score || 0) % POINTS_PER_LAP
 }));
 
 const tiktok = new TikTokLive({
@@ -53,32 +56,41 @@ tiktok.on('gift', (data) => {
     );
     
     if (country) {
-        country.score += newGiftsCount;
-        country.laps = Math.floor(country.score / 100);
-        country.currentPos = (country.score % 100) * 0.85; 
+        // Console log for tracking gifts in terminal
+        console.log(`🎁 ${data.nickname} sent ${newGiftsCount}x ${data.giftName} for ${country.name}`);
 
-        // Re-sort based on score
+        country.score += newGiftsCount;
+        country.laps = Math.floor(country.score / POINTS_PER_LAP);
+        
+        // Calculate position based on 150 points
+        country.currentPos = ((country.score % POINTS_PER_LAP) / POINTS_PER_LAP) * 85; 
+
         countriesList.sort((a, b) => b.score - a.score);
 
+        // Sending specific objects instead of the whole list to fix "undefined"
         io.emit('updateRace', {
             allCountries: countriesList,
-            winner: countriesList,
-            second: countriesList,
-            third: countriesList,
+            winner: countriesList || null,
+            second: countriesList || null,
+            third: countriesList || null,
             lastGiftedId: country.id,
             lastGiftIcon: country.giftIcon
         });
     }
 });
 
+tiktok.on('connected', () => console.log(`✅ Connected to Live: ${TARGET_USERNAME}`));
+tiktok.on('error', (err) => console.error('❌ TikTok Error:', err));
+
 tiktok.connect();
+
 io.on('connection', (socket) => {
     socket.emit('updateRace', {
         allCountries: countriesList,
-        winner: countriesList,
-        second: countriesList,
-        third: countriesList
+        winner: countriesList || null,
+        second: countriesList || null,
+        third: countriesList || null
     });
 });
 
-server.listen(3000, () => console.log(`🚀 Server on port 3000`));
+server.listen(3000, () => console.log(`🚀 Server running on http://localhost:3000`));
