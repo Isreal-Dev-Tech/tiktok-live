@@ -100,7 +100,7 @@
 
     <div id="raceTrack" class="race-container"></div>
 
-    <script src="/socket.io/socket.io.js"></script>
+                <script src="/socket.io/socket.io.js"></script>
     <script>
         const socket = io();
         const track = document.getElementById('raceTrack');
@@ -108,7 +108,7 @@
         socket.on('updateRace', (data) => {
             const countries = data.allCountries || [];
             
-            // Updates Podium using winners from records.json
+            // Updates Podium using leaders sent from server.js
             updatePodium('p1', data.winner);
             updatePodium('p2', data.second);
             updatePodium('p3', data.third);
@@ -120,7 +120,6 @@
                 lane.className = 'lane';
                 lane.id = `lane-${c.id}`;
                 
-                // FIXED: Shows the Sender's name and the Gift amount in the background
                 const boostText = isGifting ? 
                     ` <span class="sender-name">${data.senderName}</span> <span class="ticker-boost">+${data.lastGiftAmount}x ${c.giftIcon}</span>` : '';
                 
@@ -159,22 +158,23 @@
             }, 50);
         }
 
-        function updatePodium(id, country) {
+        function updatePodium(id, leaderboardObj) {
             const el = document.getElementById(id);
             if (!el) return;
             
             const flagEl = el.querySelector('.podium-flag');
             const lapsEl = el.querySelector('.podium-laps');
 
-            // Shows the flag and the finish time from the records file
-            if (country) {
-                flagEl.innerText = country.flag;
-                lapsEl.innerText = country.time; 
+            // CRITICAL FIX: Look for .wins (the total count) instead of .time
+            if (leaderboardObj && leaderboardObj.wins > 0) {
+                flagEl.innerText = leaderboardObj.flag;
+                lapsEl.innerText = `${leaderboardObj.wins} Wins`; // Shows e.g. "5 Wins"
             } else {
                 flagEl.innerText = "🏆";
                 lapsEl.innerText = "...";
             }
         }
     </script>
+    
 </body>
 </html>
