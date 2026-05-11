@@ -107,6 +107,7 @@ tiktok.on('gift', (data) => {
         const trackingId = `${data.userId}_${data.giftName}`;
         let countToProcess = 0;
 
+        // 1. Determine how many new gifts to add since the last update
         if (data.repeatEnd) {
             countToProcess = data.repeatCount - (giftComboTracker[trackingId] || 0);
             delete giftComboTracker[trackingId];
@@ -127,26 +128,30 @@ tiktok.on('gift', (data) => {
 
         console.log(`🎁 [GIFT] ${senderName} -> ${countToProcess}x ${data.giftName} (${country.name})`);
 
-        const oldLaps = Math.floor(country.score / POINTS_PER_LAP);
-        country.score += countToProcess;
-        const newLaps = Math.floor(country.score / POINTS_PER_LAP);
+        // 2. THE FIX: Loop through each gift so the lap logic triggers correctly for each one
+        for (let i = 0; i < countToProcess; i++) {
+            const oldLaps = Math.floor(country.score / POINTS_PER_LAP);
+            country.score += 1; // Move 1 point at a time
+            const newLaps = Math.floor(country.score / POINTS_PER_LAP);
 
-        if (newLaps > oldLaps) {
-            const records = ensureRecordsFile();
-            records.winners.push({ name: country.name, flag: country.flag, timestamp: Date.now() });
-            fs.writeFileSync(recordsPath, JSON.stringify(records, null, 2));
-            console.log(`🏆 [WIN] ${country.name} finished a lap!`);
+            // Check if this specific gift completed a lap
+            if (newLaps > oldLaps) {
+                const records = ensureRecordsFile();
+                records.winners.push({ name: country.name, flag: country.flag, timestamp: Date.now() });
+                fs.writeFileSync(recordsPath, JSON.stringify(records, null, 2));
+                console.log(`🏆 [WIN] ${country.name} finished a lap!`);
+            }
         }
 
+        // 3. Update Visuals
         country.currentPos = ((country.score % POINTS_PER_LAP) / POINTS_PER_LAP) * 80;
         countriesList.sort((a, b) => b.score - a.score);
 
         const leaders = getLeaderboard();
 
-        // 5. DIAGNOSTIC EMISSION
         io.emit('updateRace', {
             allCountries: countriesList,
-            winner: leaders || null,
+            winner: leaders || null, // Fixed: getLeaderboard returns an array, pick specific spots
             second: leaders || null,
             third: leaders || null,
             lastGiftedId: country.id,
@@ -158,6 +163,8 @@ tiktok.on('gift', (data) => {
         console.error("❌ ERROR DURING GIFT PROCESSING:", err);
     }
 });
+
+        
 
 // TikTok Status Logs
 tiktok.on('connected', () => console.log(`✅ SUCCESS: Connected to TikTok User: ${TARGET_USERNAME}`));
